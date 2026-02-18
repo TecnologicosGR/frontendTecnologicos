@@ -60,5 +60,41 @@ export const technicalService = {
       } catch (error) {
           throw error.response?.data || { detail: 'No se encontró el ticket' };
       }
+  },
+
+  getTrackingLogs: async (token) => {
+      try {
+          const response = await axios.get(`${BASE_URL}/tracking/${token}/logs`);
+          return response.data;
+      } catch (error) {
+          throw error.response?.data || { detail: 'Error al cargar historial' };
+      }
+  },
+
+  getAppliedServices: async (ticketId) => {
+      try {
+          const response = await axios.get(`${BASE_URL}/${ticketId}/applied-services`);
+          return response.data;
+      } catch (error) {
+          throw error.response?.data || { detail: 'Error al cargar servicios aplicados' };
+      }
+  },
+
+  addAppliedService: async (data) => {
+      try {
+          const response = await axios.post(`${BASE_URL}/applied-services`, data);
+          return response.data;
+      } catch (error) {
+          throw error.response?.data || { detail: 'Error al agregar servicio' };
+      }
+  },
+
+  updateTicket: async (id, data) => {
+      try {
+          const response = await axios.put(`${BASE_URL}/${id}`, data);
+          return response.data;
+      } catch (error) {
+          throw error.response?.data || { detail: 'Error al actualizar ticket' };
+      }
   }
 };

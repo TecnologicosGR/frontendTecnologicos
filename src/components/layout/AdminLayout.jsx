@@ -22,6 +22,7 @@ import {
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import { ModeToggle } from '../ui/mode-toggle';
 
 const SidebarItem = ({ icon: Icon, label, to }) => (
   <NavLink
@@ -165,6 +166,7 @@ export default function AdminLayout() {
              {/* Header interactions like search or user profile dropdown could go here */}
              <h1 className="text-lg font-semibold md:text-2xl">Administración</h1>
           </div>
+          <ModeToggle />
           <Button className="rounded-full" size="icon" variant="secondary">
             <span className="sr-only">Toggle user menu</span>
             <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">

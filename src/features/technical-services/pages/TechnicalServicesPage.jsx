@@ -6,12 +6,14 @@ import { Input } from '../../../components/ui/input';
 import { Search, Plus, Filter, Wrench, Clock, CheckCircle, AlertCircle, Calendar } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import TicketForm from '../components/TicketForm';
+import TicketDetailPage from '../components/TicketDetailPage';
 
 export default function TechnicalServicesPage() {
   const { tickets, loading, fetchTickets } = useTechnicalServices();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedTicketId, setSelectedTicketId] = useState(null);
 
   useEffect(() => {
     fetchTickets();
@@ -99,7 +101,7 @@ export default function TechnicalServicesPage() {
 
                    {/* Actions placeholder */}
                    <div>
-                       <Button variant="outline" size="sm" onClick={() => {}}>
+                       <Button variant="outline" size="sm" onClick={() => setSelectedTicketId(ticket.id)}>
                            Ver Detalles
                        </Button>
                    </div>
@@ -113,6 +115,13 @@ export default function TechnicalServicesPage() {
                onSuccess={() => {
                    fetchTickets();
                }} 
+           />
+       )}
+
+       {selectedTicketId && (
+           <TicketDetailPage 
+                ticketId={selectedTicketId}
+                onClose={() => setSelectedTicketId(null)}
            />
        )}
     </div>

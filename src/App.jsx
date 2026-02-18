@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './features/auth/hooks/useAuth.jsx';
 import { ToastProvider } from './components/ui/toast';
+import { ThemeProvider } from './components/theme-provider';
 import AdminLayout from './components/layout/AdminLayout';
 import LoginPage from './features/auth/pages/LoginPage';
+import TrackingPage from './pages/public/TrackingPage';
 import DashboardPage from './pages/admin/DashboardPage';
 import ClientsPage from './features/clients/pages/ClientsPage.jsx';
 import EmployeesPage from './features/employees/pages/EmployeesPage.jsx';
@@ -47,9 +49,13 @@ const PlaceholderDetails = ({ title }) => (
 function App() {
   return (
     <AuthProvider>
-      <ToastProvider>
-        <BrowserRouter>
+      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+        <ToastProvider>
+          <BrowserRouter>
         <Routes>
+            {/* Public Access Tracking */}
+            <Route path="/tracking/:token" element={<TrackingPage />} />
+
             {/* Public Routes */}
             <Route element={<PublicRoute />}>
                 <Route path="/auth/login" element={<LoginPage />} />
@@ -76,8 +82,9 @@ function App() {
             {/* Catch-all */}
             <Route path="*" element={<Navigate to="/auth/login" replace />} />
         </Routes>
-        </BrowserRouter>
-      </ToastProvider>
+          </BrowserRouter>
+        </ToastProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

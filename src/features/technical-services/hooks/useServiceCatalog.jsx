@@ -30,10 +30,38 @@ export function useServiceCatalog() {
       }
   };
 
+  const updateCatalogItem = async (id, data) => {
+      setLoading(true);
+      try {
+          await catalogService.update(id, data);
+          await fetchCatalog();
+          return { success: true };
+      } catch (err) {
+          return { success: false, error: err.detail };
+      } finally {
+          setLoading(false);
+      }
+  };
+
+  const deleteCatalogItem = async (id) => {
+      setLoading(true);
+      try {
+          await catalogService.delete(id);
+          await fetchCatalog();
+          return { success: true };
+      } catch (err) {
+          return { success: false, error: err.detail };
+      } finally {
+          setLoading(false);
+      }
+  };
+
   return {
     catalog,
     loading,
     fetchCatalog,
-    createCatalogItem
+    createCatalogItem,
+    updateCatalogItem,
+    deleteCatalogItem
   };
 }

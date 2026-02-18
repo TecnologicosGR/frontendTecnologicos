@@ -71,11 +71,22 @@ export const useClients = () => {
       }
   }
 
+  const searchClients = useCallback(async (query) => {
+    try {
+        const data = await clientsService.getAll(query);
+        return data;
+    } catch (err) {
+        console.error(err);
+        return [];
+    }
+  }, []);
+
   return {
     clients,
     loading,
     error,
     fetchClients,
+    searchClients, 
     createClient,
     updateClient,
     deleteClient

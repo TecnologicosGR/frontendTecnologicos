@@ -21,9 +21,21 @@ export const catalogService = {
     }
   },
 
-  // Assuming standard CRUD exists or will be needed
   update: async (id, data) => {
-      // Logic placeholder if API supports it
-      return { success: true }; 
+    try {
+      const response = await axios.put(`${BASE_URL}/${id}`, data);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { detail: 'Error al actualizar servicio' };
+    }
+  },
+
+  delete: async (id) => {
+    try {
+      const response = await axios.delete(`${BASE_URL}/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { detail: 'Error al eliminar servicio' };
+    }
   }
 };
