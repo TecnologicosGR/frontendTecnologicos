@@ -43,26 +43,26 @@ export function useTechnicalServices() {
     setLoading(true);
     try {
       console.log("Fetching ticket by token:", token);
-      const [ticketData, logsData] = await Promise.all([
+      const [ticketData, logsData, appliedServicesData] = await Promise.all([
         technicalService.getTrackingPublic(token),
-        technicalService.getTrackingLogs(token)
+        technicalService.getTrackingLogs(token),
+        technicalService.getTrackingAppliedServices(token)
       ]);
       
       console.log("Ticket data received:", ticketData);
       console.log("Logs data received:", logsData);
+      console.log("Applied services received:", appliedServicesData);
       
-      setCurrentTicket(ticketData);
-      // We could add a separate state for logs if needed, but for now we might need to expose it
-      // Let's assume we add a state for it or attach it to currentTicket
       ticketData.logs = logsData; 
+      ticketData.appliedServices = appliedServicesData;
       setCurrentTicket(ticketData); 
       
       setError(null);
       return { success: true, data: ticketData };
     } catch (err) {
       console.error("Error fetching ticket by token:", err);
-      let msg = err.response?.data?.detail || 'Error al obtener ticket';
-      return { success: false, error: msg };
+      setError(err.detail || 'Error al obtener ticket');
+      return { success: false, error: err.detail || 'Error al obtener ticket' };
     } finally {
       setLoading(false);
     }

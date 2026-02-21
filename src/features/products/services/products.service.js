@@ -75,5 +75,27 @@ export const productsService = {
     } catch (error) {
        throw error.response?.data || { detail: 'Error al eliminar producto' };
     }
+  },
+
+  uploadImages: async (id, files) => {
+    const formData = new FormData();
+    files.forEach(f => formData.append('files', f));
+    try {
+      const response = await axios.post(`${BASE_URL}/${id}/images`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data; // returns updated urls array
+    } catch (error) {
+      throw error.response?.data || { detail: 'Error al subir imágenes' };
+    }
+  },
+
+  deleteImage: async (id, url) => {
+    try {
+      const response = await axios.delete(`${BASE_URL}/${id}/images`, { params: { url } });
+      return response.data; // returns updated urls array
+    } catch (error) {
+      throw error.response?.data || { detail: 'Error al eliminar imagen' };
+    }
   }
 };

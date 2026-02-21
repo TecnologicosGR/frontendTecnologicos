@@ -32,7 +32,10 @@ export const technicalService = {
 
   updateStatus: async (id, statusData) => {
     try {
-      const response = await axios.patch(`${BASE_URL}/${id}/status`, statusData);
+      const { status, note } = statusData;
+      const params = { status };
+      if (note) params.note = note;
+      const response = await axios.patch(`${BASE_URL}/${id}/status`, null, { params });
       return response.data;
     } catch (error) {
       throw error.response?.data || { detail: 'Error al actualizar estado' };
@@ -68,6 +71,15 @@ export const technicalService = {
           return response.data;
       } catch (error) {
           throw error.response?.data || { detail: 'Error al cargar historial' };
+      }
+  },
+
+  getTrackingAppliedServices: async (token) => {
+      try {
+          const response = await axios.get(`${BASE_URL}/tracking/${token}/applied-services`);
+          return response.data;
+      } catch (error) {
+          throw error.response?.data || { detail: 'Error al cargar servicios aplicados' };
       }
   },
 

@@ -14,6 +14,13 @@ import CategoriesPage from './features/categories/pages/CategoriesPage.jsx';
 import ProvidersPage from './features/providers/pages/ProvidersPage.jsx';
 import TechnicalServicesPage from './features/technical-services/pages/TechnicalServicesPage.jsx';
 import ServiceCatalogPage from './features/technical-services/pages/ServiceCatalogPage.jsx';
+import KanbanPage from './features/technical-services/pages/KanbanPage.jsx';
+import POSPage from './features/sales/pages/POSPage.jsx';
+import SalesHistoryPage from './features/sales/pages/SalesHistoryPage.jsx';
+import PendingSalesPage from './features/sales/pages/PendingSalesPage.jsx';
+import CompanyInfoPage from './features/company/pages/CompanyInfoPage.jsx';
+import PaymentMethodsPage from './features/company/pages/PaymentMethodsPage.jsx';
+import DeliveryConfigPage from './features/company/pages/DeliveryConfigPage.jsx';
 
 
 // Simple wrapper to protect routes
@@ -70,12 +77,17 @@ function App() {
                     <Route path="categories" element={<CategoriesPage />} />
                     <Route path="providers" element={<ProvidersPage />} />
                     <Route path="technical-services" element={<TechnicalServicesPage />} />
+                    <Route path="technical-services/kanban" element={<KanbanPage />} />
                     <Route path="service-catalog" element={<ServiceCatalogPage />} />
-                    <Route path="sales" element={<PlaceholderDetails title="Ventas" />} />
+                    <Route path="sales"              element={<SalesHistoryPage />} />
+                    <Route path="sales/pending"      element={<PendingSalesPage />} />
+                    <Route path="pos"                element={<POSPage />} />
                     <Route path="customers" element={<ClientsPage />} />
                     <Route path="employees" element={<EmployeesPage />} />
                     <Route path="roles" element={<RolesPage />} />
-                    <Route path="settings" element={<PlaceholderDetails title="Configuración" />} />
+                    <Route path="settings/empresa"    element={<CompanyInfoPage />} />
+                    <Route path="settings/pagos"      element={<PaymentMethodsPage />} />
+                    <Route path="settings/domicilios" element={<DeliveryConfigPage />} />
                 </Route>
             </Route>
 

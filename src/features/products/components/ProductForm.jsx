@@ -5,6 +5,7 @@ import { X, Loader2, Save, Box, AlertCircle, DollarSign, Archive, MapPin, Tag } 
 import { cn } from '../../../lib/utils';
 import { useCategories } from '../../categories/hooks/useCategories';
 import { useProviders } from '../../providers/hooks/useProviders';
+import ProductImageGallery from './ProductImageGallery';
 
 export default function ProductForm({ isOpen, onClose, onSubmit, initialData = null }) {
   const { categories, subcategories, fetchCategories, fetchSubcategories } = useCategories();
@@ -28,6 +29,7 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData = n
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingDependencies, setLoadingDependencies] = useState(false);
+  const [productImages, setProductImages] = useState([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -54,8 +56,8 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData = n
             codigo_referencia: initialData.codigo_referencia || '',
             nombre: initialData.nombre || '',
             descripcion: initialData.descripcion || '',
-            id_categoria: initialData.id_categoria || '', // Might be missing
-            id_subcategoria: initialData.id_subcategoria || '', // Might be missing if API only sends relational names
+            id_categoria: initialData.id_categoria || '',
+            id_subcategoria: initialData.id_subcategoria || '',
             id_proveedor: initialData.id_proveedor || '',
             costo_compra: initialData.costo_compra || '',
             precio_venta_normal: initialData.precio_venta_normal || '',
@@ -65,6 +67,7 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData = n
             meses_garantia: initialData.meses_garantia || '',
             ubicacion_fisica: initialData.ubicacion_fisica || ''
           });
+          setProductImages(initialData.urls_imagenes || []);
           
           // Heuristic to set category if missing but we have subcat ID
           // (Requires subcategories to be loaded)
@@ -298,6 +301,19 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData = n
                             <AlertCircle className="h-4 w-4 shrink-0" />
                             <p>El stock se actualizará automáticamente con las compras y ventas. Ajuste manual solo para correcciones.</p>
                         </div>
+                    </div>
+
+                    {/* Image Gallery — full-width row */}
+                    <div className="md:col-span-2 border-t pt-6 space-y-3">
+                        <div className="flex items-center gap-2 text-primary font-semibold border-b pb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            <h3>Imágenes</h3>
+                        </div>
+                        <ProductImageGallery
+                            productId={initialData?.id || null}
+                            images={productImages}
+                            onChange={setProductImages}
+                        />
                     </div>
 
                 </form>

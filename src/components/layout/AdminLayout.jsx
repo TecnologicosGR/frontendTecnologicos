@@ -17,7 +17,14 @@ import {
   Truck,
   ChevronDown,
   Wrench,
-  ClipboardList
+  ClipboardList,
+  Kanban,
+  ShoppingCart,
+  History,
+  Receipt,
+  Landmark,
+  Building2,
+  Clock
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -115,14 +122,23 @@ export default function AdminLayout() {
 
               <SidebarGroup icon={Wrench} label="Servicios Técnicos">
                 <SidebarItem to="/admin/technical-services" icon={Wrench} label="Reparaciones" />
+                <SidebarItem to="/admin/technical-services/kanban" icon={Kanban} label="Tablero Kanban" />
                 <SidebarItem to="/admin/service-catalog" icon={ClipboardList} label="Catálogo" />
               </SidebarGroup>
 
-              <SidebarItem to="/admin/sales" icon={CreditCard} label="Ventas" />
+              <SidebarGroup icon={ShoppingCart} label="Ventas">
+                <SidebarItem to="/admin/pos"             icon={CreditCard}  label="Punto de Venta" />
+                <SidebarItem to="/admin/sales"           icon={Receipt}     label="Historial de Ventas" />
+                <SidebarItem to="/admin/sales/pending"   icon={Clock}       label="Pendientes de Pago" />
+              </SidebarGroup>
               <SidebarItem to="/admin/customers" icon={Users} label="Clientes" />
               <SidebarItem to="/admin/employees" icon={Briefcase} label="Empleados" />
               <SidebarItem to="/admin/roles" icon={Shield} label="Roles y Permisos" />
-              <SidebarItem to="/admin/settings" icon={Settings} label="Configuración" />
+              <SidebarGroup icon={Settings} label="Configuración">
+                <SidebarItem to="/admin/settings/empresa"   icon={Building2}  label="Empresa" />
+                <SidebarItem to="/admin/settings/pagos"     icon={Landmark}   label="Métodos de Pago" />
+                <SidebarItem to="/admin/settings/domicilios" icon={Truck}     label="Domicilios" />
+              </SidebarGroup>
             </nav>
           </div>
           <div className="mt-auto p-4">
