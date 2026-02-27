@@ -12,6 +12,7 @@ import RolesPage from './features/roles/pages/RolesPage.jsx';
 import ProductsPage from './features/products/pages/ProductsPage.jsx';
 import CategoriesPage from './features/categories/pages/CategoriesPage.jsx';
 import ProvidersPage from './features/providers/pages/ProvidersPage.jsx';
+import InventoryMovementsPage from './features/products/pages/InventoryMovementsPage.jsx';
 import TechnicalServicesPage from './features/technical-services/pages/TechnicalServicesPage.jsx';
 import ServiceCatalogPage from './features/technical-services/pages/ServiceCatalogPage.jsx';
 import KanbanPage from './features/technical-services/pages/KanbanPage.jsx';
@@ -21,6 +22,7 @@ import PendingSalesPage from './features/sales/pages/PendingSalesPage.jsx';
 import CompanyInfoPage from './features/company/pages/CompanyInfoPage.jsx';
 import PaymentMethodsPage from './features/company/pages/PaymentMethodsPage.jsx';
 import DeliveryConfigPage from './features/company/pages/DeliveryConfigPage.jsx';
+import CierresPage from './features/finance/pages/CierresPage.jsx';
 
 
 // Simple wrapper to protect routes
@@ -73,9 +75,10 @@ function App() {
                 <Route element={<AdminLayout />}>
                     <Route index element={<Navigate to="/admin/dashboard" replace />} />
                     <Route path="dashboard" element={<DashboardPage />} />
-                    <Route path="products" element={<ProductsPage />} />
-                    <Route path="categories" element={<CategoriesPage />} />
-                    <Route path="providers" element={<ProvidersPage />} />
+                    <Route path="products"          element={<ProductsPage />} />
+                    <Route path="categories"         element={<CategoriesPage />} />
+                    <Route path="providers"          element={<ProvidersPage />} />
+                    <Route path="inventory/movements" element={<InventoryMovementsPage />} />
                     <Route path="technical-services" element={<TechnicalServicesPage />} />
                     <Route path="technical-services/kanban" element={<KanbanPage />} />
                     <Route path="service-catalog" element={<ServiceCatalogPage />} />
@@ -88,6 +91,7 @@ function App() {
                     <Route path="settings/empresa"    element={<CompanyInfoPage />} />
                     <Route path="settings/pagos"      element={<PaymentMethodsPage />} />
                     <Route path="settings/domicilios" element={<DeliveryConfigPage />} />
+                    <Route path="finance/cierres"     element={<CierresPage />} />
                 </Route>
             </Route>
 

@@ -19,5 +19,11 @@ export const authService = {
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+  },
+
+  /** Fetch current user profile + effective permissions from the backend. */
+  getMe: async () => {
+    const { data } = await api.get('/auth/me');
+    return data;   // { id, email, role, permissions: ['productos:leer', ...] }
   }
 };

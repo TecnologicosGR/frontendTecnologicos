@@ -24,44 +24,53 @@ import {
   Receipt,
   Landmark,
   Building2,
-  Clock
+  Clock,
+  BarChart3,
+  DollarSign
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { ModeToggle } from '../ui/mode-toggle';
 
-const SidebarItem = ({ icon: Icon, label, to }) => (
-  <NavLink
-    to={to}
-    className={({ isActive }) =>
-      cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:text-primary",
-        isActive 
-          ? "bg-primary/10 text-primary" 
-          : "text-muted-foreground hover:bg-muted"
-      )
-    }
-  >
-    <Icon className="h-4 w-4" />
-    {label}
-  </NavLink>
-);
+// SidebarItem now hides itself if user lacks the required permission.
+// Admins/Superadmins always see everything.
+const SidebarItem = ({ icon: Icon, label, to, permission }) => {
+  const { hasPermission } = useAuth();
+  if (permission && !hasPermission(permission)) return null;
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:text-primary",
+          isActive 
+            ? "bg-primary/10 text-primary" 
+            : "text-muted-foreground hover:bg-muted"
+        )
+      }
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </NavLink>
+  );
+};
 
 const SidebarGroup = ({ icon: Icon, label, children }) => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  
+
+  // Filter out hidden children (null returns from SidebarItem)
+  const visibleChildren = React.Children.toArray(children).filter(Boolean);
+  if (visibleChildren.length === 0) return null;  // hide empty groups
+
   // Auto-open if any child is active
   useEffect(() => {
-    // Check if any child path matches current location
-    const hasActiveChild = React.Children.toArray(children).some(child => {
-        return location.pathname.startsWith(child.props.to);
-    });
-    if (hasActiveChild) {
-        setIsOpen(true);
-    }
-  }, [location.pathname, children]);
+    const hasActiveChild = visibleChildren.some(child => 
+        location.pathname.startsWith(child.props?.to)
+    );
+    if (hasActiveChild) setIsOpen(true);
+  }, [location.pathname]);
 
   return (
     <div className="space-y-1">
@@ -92,7 +101,7 @@ const SidebarGroup = ({ icon: Icon, label, children }) => {
 export default function AdminLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user, isAdmin } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -115,29 +124,33 @@ export default function AdminLayout() {
               <SidebarItem to="/admin/dashboard" icon={LayoutDashboard} label="Dashboard" />
               
               <SidebarGroup icon={ShoppingBag} label="Inventario">
-                <SidebarItem to="/admin/products" icon={Box} label="Productos" />
-                <SidebarItem to="/admin/categories" icon={Layers} label="Categorías" />
-                <SidebarItem to="/admin/providers" icon={Truck} label="Proveedores" />
+                <SidebarItem to="/admin/products"            icon={Box}       label="Productos"   permission="productos:leer" />
+                <SidebarItem to="/admin/categories"          icon={Layers}    label="Categorías"  permission="productos:leer" />
+                <SidebarItem to="/admin/providers"           icon={Truck}     label="Proveedores" permission="productos:leer" />
+                <SidebarItem to="/admin/inventory/movements" icon={BarChart3} label="Movimientos" permission="inventario:leer" />
               </SidebarGroup>
 
               <SidebarGroup icon={Wrench} label="Servicios Técnicos">
-                <SidebarItem to="/admin/technical-services" icon={Wrench} label="Reparaciones" />
-                <SidebarItem to="/admin/technical-services/kanban" icon={Kanban} label="Tablero Kanban" />
-                <SidebarItem to="/admin/service-catalog" icon={ClipboardList} label="Catálogo" />
+                <SidebarItem to="/admin/technical-services"        icon={Wrench}        label="Reparaciones"  permission="servicios:leer" />
+                <SidebarItem to="/admin/technical-services/kanban" icon={Kanban}        label="Tablero Kanban" permission="servicios:leer" />
+                <SidebarItem to="/admin/service-catalog"           icon={ClipboardList} label="Catálogo"       permission="servicios:catalogo" />
               </SidebarGroup>
 
               <SidebarGroup icon={ShoppingCart} label="Ventas">
-                <SidebarItem to="/admin/pos"             icon={CreditCard}  label="Punto de Venta" />
-                <SidebarItem to="/admin/sales"           icon={Receipt}     label="Historial de Ventas" />
-                <SidebarItem to="/admin/sales/pending"   icon={Clock}       label="Pendientes de Pago" />
+                <SidebarItem to="/admin/pos"               icon={CreditCard} label="Punto de Venta"     permission="carrito:usar" />
+                <SidebarItem to="/admin/sales"             icon={Receipt}    label="Historial de Ventas" permission="pedidos:leer" />
+                <SidebarItem to="/admin/sales/pending"     icon={Clock}      label="Pendientes de Pago" permission="pedidos:leer" />
+                <SidebarItem to="/admin/finance/cierres"   icon={DollarSign} label="Cierre de Caja"     permission="finanzas:cierre" />
               </SidebarGroup>
-              <SidebarItem to="/admin/customers" icon={Users} label="Clientes" />
-              <SidebarItem to="/admin/employees" icon={Briefcase} label="Empleados" />
-              <SidebarItem to="/admin/roles" icon={Shield} label="Roles y Permisos" />
+
+              <SidebarItem to="/admin/customers" icon={Users}     label="Clientes"        permission="clientes:leer" />
+              <SidebarItem to="/admin/employees" icon={Briefcase} label="Empleados"       permission="empleados:leer" />
+              <SidebarItem to="/admin/roles"     icon={Shield}    label="Roles y Permisos" permission="roles:leer" />
+
               <SidebarGroup icon={Settings} label="Configuración">
-                <SidebarItem to="/admin/settings/empresa"   icon={Building2}  label="Empresa" />
-                <SidebarItem to="/admin/settings/pagos"     icon={Landmark}   label="Métodos de Pago" />
-                <SidebarItem to="/admin/settings/domicilios" icon={Truck}     label="Domicilios" />
+                <SidebarItem to="/admin/settings/empresa"    icon={Building2} label="Empresa"         permission="empresa:leer" />
+                <SidebarItem to="/admin/settings/pagos"      icon={Landmark}  label="Métodos de Pago"  permission="empresa:editar" />
+                <SidebarItem to="/admin/settings/domicilios" icon={Truck}     label="Domicilios"       permission="empresa:editar" />
               </SidebarGroup>
             </nav>
           </div>
@@ -167,28 +180,58 @@ export default function AdminLayout() {
                             <X className="h-5 w-5"/>
                          </Button>
                     </div>
-                     <nav className="grid gap-2 mt-8 text-lg font-medium">
+                     <nav className="grid gap-1 mt-6 text-sm font-medium overflow-y-auto max-h-[80vh]" onClick={() => setIsMobileMenuOpen(false)}>
                         <SidebarItem to="/admin/dashboard" icon={LayoutDashboard} label="Dashboard" />
-                        <SidebarItem to="/admin/products" icon={ShoppingBag} label="Productos" />
-                        <SidebarItem to="/admin/sales" icon={CreditCard} label="Ventas" />
-                        <SidebarItem to="/admin/customers" icon={Users} label="Clientes" />
-                        <SidebarItem to="/admin/employees" icon={Briefcase} label="Empleados" />
+
+                        <SidebarGroup icon={ShoppingBag} label="Inventario">
+                          <SidebarItem to="/admin/products"            icon={Box}       label="Productos"   permission="productos:leer" />
+                          <SidebarItem to="/admin/categories"          icon={Layers}    label="Categorías"  permission="productos:leer" />
+                          <SidebarItem to="/admin/providers"           icon={Truck}     label="Proveedores" permission="productos:leer" />
+                          <SidebarItem to="/admin/inventory/movements" icon={BarChart3} label="Movimientos" permission="inventario:leer" />
+                        </SidebarGroup>
+
+                        <SidebarGroup icon={Wrench} label="Servicios Técnicos">
+                          <SidebarItem to="/admin/technical-services"        icon={Wrench}        label="Reparaciones"   permission="servicios:leer" />
+                          <SidebarItem to="/admin/technical-services/kanban" icon={Kanban}        label="Tablero Kanban" permission="servicios:leer" />
+                          <SidebarItem to="/admin/service-catalog"           icon={ClipboardList} label="Catálogo"        permission="servicios:catalogo" />
+                        </SidebarGroup>
+
+                        <SidebarGroup icon={ShoppingCart} label="Ventas">
+                          <SidebarItem to="/admin/pos"             icon={CreditCard} label="Punto de Venta"     permission="carrito:usar" />
+                          <SidebarItem to="/admin/sales"           icon={Receipt}    label="Historial de Ventas" permission="pedidos:leer" />
+                          <SidebarItem to="/admin/sales/pending"   icon={Clock}      label="Pendientes de Pago" permission="pedidos:leer" />
+                          <SidebarItem to="/admin/finance/cierres" icon={DollarSign} label="Cierre de Caja"     permission="finanzas:cierre" />
+                        </SidebarGroup>
+
+                        <SidebarItem to="/admin/customers" icon={Users}     label="Clientes"        permission="clientes:leer" />
+                        <SidebarItem to="/admin/employees" icon={Briefcase} label="Empleados"       permission="empleados:leer" />
+                        <SidebarItem to="/admin/roles"     icon={Shield}    label="Roles y Permisos" permission="roles:leer" />
+
+                        <SidebarGroup icon={Settings} label="Configuración">
+                          <SidebarItem to="/admin/settings/empresa"    icon={Building2} label="Empresa"        permission="empresa:leer" />
+                          <SidebarItem to="/admin/settings/pagos"      icon={Landmark}  label="Métodos de Pago" permission="empresa:editar" />
+                          <SidebarItem to="/admin/settings/domicilios" icon={Truck}     label="Domicilios"     permission="empresa:editar" />
+                        </SidebarGroup>
                      </nav>
                 </div>
              </div>
           )}
           
           <div className="w-full flex-1">
-             {/* Header interactions like search or user profile dropdown could go here */}
              <h1 className="text-lg font-semibold md:text-2xl">Administración</h1>
           </div>
           <ModeToggle />
-          <Button className="rounded-full" size="icon" variant="secondary">
-            <span className="sr-only">Toggle user menu</span>
-            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">
-                AD
+          {/* User avatar + role badge */}
+          <div className="flex items-center gap-2">
+            {user?.role && (
+              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+                {user.role}
+              </span>
+            )}
+            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-black text-primary select-none cursor-default" title={user?.email}>
+              {user?.email ? user.email.slice(0, 2).toUpperCase() : 'AD'}
             </div>
-          </Button>
+          </div>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           <Outlet />

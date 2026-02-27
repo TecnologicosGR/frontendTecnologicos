@@ -8,7 +8,8 @@ import { Input } from '../../../components/ui/input';
 import {
   Receipt, Search, RefreshCw, Eye, Trash2, X, Loader2,
   TrendingUp, DollarSign, CreditCard, Banknote, FileText,
-  ChevronLeft, ChevronRight, Calendar, BarChart2, Filter
+  ChevronLeft, ChevronRight, Calendar, BarChart2, Filter,
+  CheckCircle2, Clock, AlertCircle
 } from 'lucide-react';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -59,15 +60,17 @@ function getPreset(key) {
 
 // ── Summary Cards ────────────────────────────────────────────────────────────
 function SummaryCards({ summary }) {
+  const hasPending = summary && (summary.ventas_pendientes ?? 0) > 0;
   const cards = [
-    { label: 'Ventas',        value: summary ? String(summary.total_ventas ?? 0)          : null, icon: Receipt,   color: 'text-primary',      bg: 'bg-primary/10' },
-    { label: 'Recaudado',     value: summary ? formatCurrency(summary.monto_total)         : null, icon: DollarSign, color: 'text-green-600',     bg: 'bg-green-50 dark:bg-green-950/30' },
-    { label: 'Efectivo',      value: summary ? formatCurrency(summary.total_efectivo)      : null, icon: Banknote,   color: 'text-emerald-500',   bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
-    { label: 'Transferencia', value: summary ? formatCurrency(summary.total_transferencia) : null, icon: CreditCard, color: 'text-blue-500',      bg: 'bg-blue-50 dark:bg-blue-950/30' },
-    { label: 'Ganancia bruta',value: summary ? formatCurrency(summary.ganancia_bruta)      : null, icon: TrendingUp, color: 'text-violet-600',    bg: 'bg-violet-50 dark:bg-violet-950/30' },
+    { label: 'Total ventas',    value: summary ? String(summary.total_ventas ?? 0)          : null, icon: Receipt,       color: 'text-primary',    bg: 'bg-primary/10' },
+    { label: 'Cobrado',         value: summary ? formatCurrency(summary.monto_cobrado ?? summary.monto_total) : null, icon: CheckCircle2,  color: 'text-green-600',  bg: 'bg-green-50 dark:bg-green-950/30' },
+    { label: 'Pendiente',       value: summary ? formatCurrency(summary.monto_pendiente ?? 0) : null, icon: Clock,   color: hasPending ? 'text-amber-500' : 'text-slate-300', bg: hasPending ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/50' : 'bg-white dark:bg-slate-900' },
+    { label: 'Efectivo',        value: summary ? formatCurrency(summary.total_efectivo)      : null, icon: Banknote,      color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
+    { label: 'Transferencia',   value: summary ? formatCurrency(summary.total_transferencia) : null, icon: CreditCard,    color: 'text-blue-500',   bg: 'bg-blue-50 dark:bg-blue-950/30' },
+    { label: 'Ganancia bruta',  value: summary ? formatCurrency(summary.ganancia_bruta)      : null, icon: TrendingUp,    color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-950/30' },
   ];
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
       {cards.map(c => (
         <div key={c.label} className={`${c.bg} rounded-xl border border-white/60 dark:border-slate-700 p-4 flex items-center gap-3 transition-all`}>
           <div className="shrink-0">
@@ -127,7 +130,7 @@ function PaymentBreakdown({ summary }) {
   if (!summary || summary.total_ventas === 0) return (
     <div className="flex items-center justify-center h-full text-slate-300 text-xs">Sin ventas</div>
   );
-  const total = summary.monto_total || 1;
+  const total = summary.monto_cobrado ?? summary.monto_total ?? 1;
   const items = [
     { label: 'Efectivo',      val: summary.total_efectivo,      color: '#10b981' },
     { label: 'Transferencia', val: summary.total_transferencia, color: '#3b82f6' },
@@ -451,23 +454,41 @@ export default function SalesHistoryPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500">Vendedor</th>
                 <th className="px-3 py-3 text-center text-xs font-semibold text-slate-500">Items</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500">Pago</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500">Estado</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500">Total</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-              {sales.map(sale => (
-                <tr key={sale.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer" onClick={() => setSelectedId(sale.id)}>
-                  <td className="px-4 py-3 font-mono text-slate-400 text-xs">#{sale.id}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(sale.fecha_venta)}</td>
-                  <td className="px-4 py-3 font-medium">{sale.nombre_cliente || <span className="text-slate-400 italic">Anónimo</span>}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs">{sale.nombre_empleado || '—'}</td>
-                  <td className="px-3 py-3 text-center"><Badge variant="secondary">{sale.total_items ?? '—'}</Badge></td>
-                  <td className="px-4 py-3"><Badge variant="outline">{sale.metodo_pago}</Badge></td>
-                  <td className="px-4 py-3 text-right font-black text-primary">{formatCurrency(sale.monto_total)}</td>
-                  <td className="px-4 py-3 text-slate-400"><Eye className="h-4 w-4" /></td>
-                </tr>
-              ))}
+              {sales.map(sale => {
+                const isPaid = sale.pagado !== false;   // null/undefined → treat as paid
+                return (
+                  <tr key={sale.id}
+                    className={`hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer ${
+                      !isPaid ? 'bg-amber-50/60 dark:bg-amber-950/10' : ''
+                    }`}
+                    onClick={() => setSelectedId(sale.id)}>
+                    <td className="px-4 py-3 font-mono text-slate-400 text-xs">#{sale.id}</td>
+                    <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(sale.fecha_venta)}</td>
+                    <td className="px-4 py-3 font-medium">{sale.nombre_cliente || <span className="text-slate-400 italic">Anónimo</span>}</td>
+                    <td className="px-4 py-3 text-slate-500 text-xs">{sale.nombre_empleado || '—'}</td>
+                    <td className="px-3 py-3 text-center"><Badge variant="secondary">{sale.total_items ?? '—'}</Badge></td>
+                    <td className="px-4 py-3"><Badge variant="outline">{sale.metodo_pago}</Badge></td>
+                    <td className="px-4 py-3 text-center">
+                      {isPaid
+                        ? <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 dark:bg-green-950 dark:text-green-300 px-2 py-0.5 rounded-full">
+                            <CheckCircle2 className="h-3 w-3" /> Pagado
+                          </span>
+                        : <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 rounded-full">
+                            <Clock className="h-3 w-3" /> Pendiente
+                          </span>
+                      }
+                    </td>
+                    <td className="px-4 py-3 text-right font-black text-primary">{formatCurrency(sale.monto_total)}</td>
+                    <td className="px-4 py-3 text-slate-400"><Eye className="h-4 w-4" /></td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
