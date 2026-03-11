@@ -142,9 +142,13 @@ export default function ProductsPage() {
               products.map(product => (
                   <div key={product.id} className="group bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 dark:hover:border-primary/50 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden">
                       {/* Image Placeholder */}
-                      <div className="h-40 bg-slate-100 dark:bg-slate-800 flex items-center justify-center relative">
-                          <Box className="h-12 w-12 text-slate-300" />
-                          <div className="absolute top-3 right-3 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="h-40 bg-slate-100 dark:bg-slate-800 flex items-center justify-center relative overflow-hidden">
+                          {product.urls_imagenes && product.urls_imagenes.length > 0 ? (
+                              <img src={product.urls_imagenes[0]} alt={product.nombre} className="object-cover w-full h-full transition-transform group-hover:scale-105" />
+                          ) : (
+                              <Box className="h-12 w-12 text-slate-300" />
+                          )}
+                          <div className="absolute top-3 right-3 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                               <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full shadow-sm" onClick={() => handleEdit(product)}>
                                  {/* Use a simple pencil icon or similar */}
                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
@@ -176,6 +180,12 @@ export default function ProductsPage() {
                           </div>
                           <h3 className="font-bold text-slate-900 dark:text-white leading-tight mb-2 line-clamp-2" title={product.nombre}>{product.nombre}</h3>
                           
+                          {product.numero_serie && (
+                              <div className="mb-2 inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-slate-100 text-slate-900 hover:bg-slate-100/80 dark:bg-slate-800 dark:text-slate-100 w-fit gap-1">
+                                  <Tag className="h-3 w-3" /> S/N: {product.numero_serie}
+                              </div>
+                          )}
+
                           <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                               <div className="flex flex-col">
                                   <span className="text-xs text-slate-400">Precio Público</span>

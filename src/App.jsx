@@ -14,6 +14,7 @@ import CategoriesPage from './features/categories/pages/CategoriesPage.jsx';
 import ProvidersPage from './features/providers/pages/ProvidersPage.jsx';
 import InventoryMovementsPage from './features/products/pages/InventoryMovementsPage.jsx';
 import TechnicalServicesPage from './features/technical-services/pages/TechnicalServicesPage.jsx';
+import AdminServicesPage from './features/technical-services/pages/AdminServicesPage.jsx';
 import ServiceCatalogPage from './features/technical-services/pages/ServiceCatalogPage.jsx';
 import KanbanPage from './features/technical-services/pages/KanbanPage.jsx';
 import POSPage from './features/sales/pages/POSPage.jsx';
@@ -23,6 +24,7 @@ import CompanyInfoPage from './features/company/pages/CompanyInfoPage.jsx';
 import PaymentMethodsPage from './features/company/pages/PaymentMethodsPage.jsx';
 import DeliveryConfigPage from './features/company/pages/DeliveryConfigPage.jsx';
 import CierresPage from './features/finance/pages/CierresPage.jsx';
+import AuditLogsPage from './features/audit/pages/AuditLogsPage.jsx';
 
 
 // Simple wrapper to protect routes
@@ -82,6 +84,7 @@ function App() {
                     <Route path="technical-services" element={<TechnicalServicesPage />} />
                     <Route path="technical-services/kanban" element={<KanbanPage />} />
                     <Route path="service-catalog" element={<ServiceCatalogPage />} />
+                    <Route path="admin-services" element={<AdminServicesPage />} />
                     <Route path="sales"              element={<SalesHistoryPage />} />
                     <Route path="sales/pending"      element={<PendingSalesPage />} />
                     <Route path="pos"                element={<POSPage />} />
@@ -92,6 +95,7 @@ function App() {
                     <Route path="settings/pagos"      element={<PaymentMethodsPage />} />
                     <Route path="settings/domicilios" element={<DeliveryConfigPage />} />
                     <Route path="finance/cierres"     element={<CierresPage />} />
+                    <Route path="audit"               element={<AuditLogsPage />} />
                 </Route>
             </Route>
 

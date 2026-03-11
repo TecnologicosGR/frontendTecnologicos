@@ -10,7 +10,7 @@ import { Search, Save, X, UserPlus } from 'lucide-react';
 import PhotoUploadModal from './PhotoUploadModal';
 import { Clipboard, CheckCircle, Upload, Printer } from 'lucide-react';
 
-export default function TicketForm({ onClose, onSuccess }) {
+export default function TicketForm({ onClose, onSuccess, isAdminService = false }) {
   const { register, handleSubmit, formState: { errors } } = useForm();
   const { createTicket, loading: loadingTicket } = useTechnicalServices();
   const { clients, searchClients } = useClients();
@@ -65,6 +65,7 @@ export default function TicketForm({ onClose, onSuccess }) {
           estado_fisico_entrada: data.estado_fisico_entrada,
           motivo_ingreso: data.motivo_ingreso,
           diagnostico: data.diagnostico || "",
+          es_servicio_admin: isAdminService,
           urls_evidencia_fotos: [],
           fecha_estimada_salida: data.fecha_estimada_salida || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       };

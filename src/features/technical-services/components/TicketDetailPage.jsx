@@ -146,7 +146,14 @@ export default function TicketDetailPage({ ticketId, onClose }) {
                        </span>
                    </div>
 
-                   <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight mb-1">{currentTicket.marca_modelo}</h1>
+                   <div className="flex items-center gap-2 mb-1">
+                       <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{currentTicket.marca_modelo}</h1>
+                       {currentTicket.es_servicio_admin && (
+                           <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 uppercase tracking-wider">
+                               Admin
+                           </span>
+                       )}
+                   </div>
                    <p className="text-slate-500 text-sm font-medium">{currentTicket.tipo_dispositivo}</p>
                    {currentTicket.numero_serie && <p className="text-xs text-slate-400 mt-1 font-mono">S/N: {currentTicket.numero_serie}</p>}
                </div>

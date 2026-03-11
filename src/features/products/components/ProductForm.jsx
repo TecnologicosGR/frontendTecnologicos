@@ -13,6 +13,7 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData = n
   
   const [formData, setFormData] = useState({
     codigo_referencia: '',
+    numero_serie: '',
     nombre: '',
     descripcion: '',
     id_categoria: '', // Virtual field for filtering
@@ -54,6 +55,7 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData = n
           
           setFormData({
             codigo_referencia: initialData.codigo_referencia || '',
+            numero_serie: initialData.numero_serie || '',
             nombre: initialData.nombre || '',
             descripcion: initialData.descripcion || '',
             id_categoria: initialData.id_categoria || '',
@@ -74,6 +76,7 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData = n
       } else if (isOpen) {
           setFormData({
             codigo_referencia: '',
+            numero_serie: '',
             nombre: '',
             descripcion: '',
             id_categoria: '',
@@ -121,6 +124,11 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData = n
         // Prepare payload (exclude virtual fields)
         const payload = { ...formData };
         delete payload.id_categoria;
+        
+        // Ensure numero_serie is either sent correctly or omitted if empty
+        if (!payload.numero_serie || payload.numero_serie.trim() === '') {
+            payload.numero_serie = null; // Send as null to backend if left empty
+        }
         
         // Convert numbers
         payload.id_subcategoria = parseInt(payload.id_subcategoria);
@@ -179,6 +187,13 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData = n
                                 <label className="text-sm font-medium">Código Referencia <span className="text-red-500">*</span></label>
                                 <Input required value={formData.codigo_referencia} onChange={e => setFormData({...formData, codigo_referencia: e.target.value.toUpperCase()})} placeholder="Ej. SKU-123" />
                             </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Número de Serie <span className="text-slate-400 font-normal">(Opcional)</span></label>
+                                <Input value={formData.numero_serie} onChange={e => setFormData({...formData, numero_serie: e.target.value.toUpperCase()})} placeholder="Ej. S/N 123456789" />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Ubicación Física</label>
                                 <div className="relative">

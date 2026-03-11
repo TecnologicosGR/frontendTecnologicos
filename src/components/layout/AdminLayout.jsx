@@ -26,7 +26,8 @@ import {
   Building2,
   Clock,
   BarChart3,
-  DollarSign
+  DollarSign,
+  ShieldAlert
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -134,6 +135,7 @@ export default function AdminLayout() {
                 <SidebarItem to="/admin/technical-services"        icon={Wrench}        label="Reparaciones"  permission="servicios:leer" />
                 <SidebarItem to="/admin/technical-services/kanban" icon={Kanban}        label="Tablero Kanban" permission="servicios:leer" />
                 <SidebarItem to="/admin/service-catalog"           icon={ClipboardList} label="Catálogo"       permission="servicios:catalogo" />
+                {isAdmin() && <SidebarItem to="/admin/admin-services" icon={Shield}       label="Servicios Admin" />}
               </SidebarGroup>
 
               <SidebarGroup icon={ShoppingCart} label="Ventas">
@@ -152,6 +154,12 @@ export default function AdminLayout() {
                 <SidebarItem to="/admin/settings/pagos"      icon={Landmark}  label="Métodos de Pago"  permission="empresa:editar" />
                 <SidebarItem to="/admin/settings/domicilios" icon={Truck}     label="Domicilios"       permission="empresa:editar" />
               </SidebarGroup>
+
+              {isAdmin() && (
+                  <SidebarGroup icon={ShieldAlert} label="Seguridad">
+                      <SidebarItem to="/admin/audit" icon={ShieldAlert} label="Auditoría" />
+                  </SidebarGroup>
+              )}
             </nav>
           </div>
           <div className="mt-auto p-4">
@@ -194,6 +202,7 @@ export default function AdminLayout() {
                           <SidebarItem to="/admin/technical-services"        icon={Wrench}        label="Reparaciones"   permission="servicios:leer" />
                           <SidebarItem to="/admin/technical-services/kanban" icon={Kanban}        label="Tablero Kanban" permission="servicios:leer" />
                           <SidebarItem to="/admin/service-catalog"           icon={ClipboardList} label="Catálogo"        permission="servicios:catalogo" />
+                          {isAdmin() && <SidebarItem to="/admin/admin-services" icon={Shield}       label="Servicios Admin" />}
                         </SidebarGroup>
 
                         <SidebarGroup icon={ShoppingCart} label="Ventas">
@@ -212,6 +221,12 @@ export default function AdminLayout() {
                           <SidebarItem to="/admin/settings/pagos"      icon={Landmark}  label="Métodos de Pago" permission="empresa:editar" />
                           <SidebarItem to="/admin/settings/domicilios" icon={Truck}     label="Domicilios"     permission="empresa:editar" />
                         </SidebarGroup>
+
+                        {isAdmin() && (
+                            <SidebarGroup icon={ShieldAlert} label="Seguridad">
+                                <SidebarItem to="/admin/audit" icon={ShieldAlert} label="Auditoría" />
+                            </SidebarGroup>
+                        )}
                      </nav>
                 </div>
              </div>

@@ -13,7 +13,7 @@ import {
   Phone, Mail, MapPin, Store, Truck, PackageCheck
 } from 'lucide-react';
 
-const PAYMENT_METHODS = ['Efectivo', 'Transferencia', 'Otro'];
+const PAYMENT_METHODS = ['Efectivo', 'Transferencia', 'Mixto', 'Otro'];
 
 const ENTREGA_OPTIONS = [
   { key: 'en_punto',         label: 'En punto',    desc: 'El cliente paga y lleva',          Icon: Store },
@@ -243,6 +243,9 @@ export default function POSPage() {
   const [selectedClient, setSelectedClient] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('Efectivo');
   const [tipoEntrega, setTipoEntrega] = useState('en_punto');
+  const [pagado, setPagado] = useState(true);
+  const [montoEfectivo, setMontoEfectivo] = useState(0);
+  const [montoTransferencia, setMontoTransferencia] = useState(0);
   const [deliveryCost, setDeliveryCost] = useState(0);
   const [direccionEntrega, setDireccionEntrega] = useState('');
   const [notes, setNotes] = useState('');
@@ -305,6 +308,13 @@ export default function POSPage() {
     if (tipoEntrega === 'domicilio' && !direccionEntrega.trim()) {
       toast({ title: '⚠️ Debes ingresar la dirección de entrega', variant: 'destructive' }); return;
     }
+    if (paymentMethod === 'Mixto' && pagado) {
+      const sum = (parseFloat(montoEfectivo) || 0) + (parseFloat(montoTransferencia) || 0);
+      if (sum !== total) {
+        toast({ title: '⚠️ Los montos mixtos no cuadran', description: `Suma: ${formatCurrency(sum)}, Total: ${formatCurrency(total)}`, variant: 'destructive' }); return;
+      }
+    }
+
     const domObs = tipoEntrega === 'domicilio'
       ? `[Domicilio · ${formatCurrency(deliveryCost)}] ${direccionEntrega}` : '';
     const payload = {
@@ -312,6 +322,9 @@ export default function POSPage() {
       metodo_pago: paymentMethod,
       tipo_entrega: tipoEntrega,
       direccion_entrega: tipoEntrega === 'domicilio' ? direccionEntrega : null,
+      pagado: pagado,
+      monto_efectivo: paymentMethod === 'Mixto' && pagado ? (parseFloat(montoEfectivo) || 0) : 0,
+      monto_transferencia: paymentMethod === 'Mixto' && pagado ? (parseFloat(montoTransferencia) || 0) : 0,
       observaciones: [notes, domObs].filter(Boolean).join(' | ') || null,
       items: cartItems.map(i => ({
         id_producto: i.product.id,
@@ -324,6 +337,7 @@ export default function POSPage() {
       setLastSale(result.data);
       setCartItems([]); setSelectedClient(null); setNotes('');
       setTipoEntrega('en_punto'); setDeliveryCost(0); setDireccionEntrega('');
+      setPaymentMethod('Efectivo'); setPagado(true); setMontoEfectivo(0); setMontoTransferencia(0);
     } else {
       toast({ title: '❌ Error', description: result.error, variant: 'destructive' });
     }
@@ -427,17 +441,50 @@ export default function POSPage() {
         <div className="lg:col-span-2 flex flex-col gap-4">
           {/* Payment method */}
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
-            <p className="text-sm font-semibold flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" />Método de Pago</p>
-            <div className="grid grid-cols-3 gap-2">
-              {PAYMENT_METHODS.map(m => (
-                <button key={m} onClick={() => setPaymentMethod(m)}
-                  className={`py-2.5 rounded-xl text-sm font-medium border transition-all ${paymentMethod === m
-                    ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                    : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-primary/40'}`}>
-                  {m}
-                </button>
-              ))}
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" />Método de Pago</p>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" className="rounded text-primary focus:ring-primary h-4 w-4" checked={pagado} onChange={e => setPagado(e.target.checked)} />
+                <span className={pagado ? "font-semibold text-green-600 dark:text-green-500" : "font-semibold text-amber-600 dark:text-amber-500"}>{pagado ? "Pagado" : "Pendiente"}</span>
+              </label>
             </div>
+            {pagado && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {PAYMENT_METHODS.map(m => (
+                  <button key={m} onClick={() => setPaymentMethod(m)}
+                    className={`py-2 rounded-xl text-xs font-medium border transition-all ${paymentMethod === m
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-primary/40'}`}>
+                    {m}
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            {pagado && paymentMethod === 'Mixto' && (
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="space-y-1">
+                  <label className="text-xs text-slate-500">Monto Efectivo</label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-2 text-xs text-slate-400">$</span>
+                    <Input type="number" min="0" className="pl-6 h-8 text-sm" value={montoEfectivo} onChange={e => setMontoEfectivo(e.target.value)} />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-slate-500">Monto Transferencia</label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-2 text-xs text-slate-400">$</span>
+                    <Input type="number" min="0" className="pl-6 h-8 text-sm" value={montoTransferencia} onChange={e => setMontoTransferencia(e.target.value)} />
+                  </div>
+                </div>
+                <div className="col-span-2 flex justify-between items-center text-xs mt-1">
+                  <span className="text-slate-500">Suma: {formatCurrency((parseFloat(montoEfectivo) || 0) + (parseFloat(montoTransferencia) || 0))}</span>
+                  <span className={`font-bold ${(parseFloat(montoEfectivo) || 0) + (parseFloat(montoTransferencia) || 0) === total ? "text-green-500" : "text-red-500"}`}>
+                    Total: {formatCurrency(total)}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Delivery panel */}

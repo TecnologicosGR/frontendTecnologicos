@@ -5,10 +5,11 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Search, Plus, Filter, Wrench, Clock, CheckCircle, AlertCircle, Calendar } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import { useAuth } from '../../auth/hooks/useAuth';
 import TicketForm from '../components/TicketForm';
 import TicketDetailPage from '../components/TicketDetailPage';
 
-export default function TechnicalServicesPage() {
+export default function AdminServicesPage() {
   const { tickets, loading, fetchTickets } = useTechnicalServices();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,7 +17,7 @@ export default function TechnicalServicesPage() {
   const [selectedTicketId, setSelectedTicketId] = useState(null);
 
   useEffect(() => {
-    fetchTickets({ es_admin: false });
+    fetchTickets({ es_admin: true });
   }, [fetchTickets]);
 
   const filteredTickets = tickets.filter(t => 
@@ -40,10 +41,10 @@ export default function TechnicalServicesPage() {
        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                Ordenes de Servicio
+                Servicios Administrador
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-1">
-                Gestión de reparaciones y mantenimiento de la tienda.
+                Gestión de reparaciones independientes del administrador.
             </p>
           </div>
           <Button onClick={() => setIsFormOpen(true)} className="shadow-md">
@@ -115,10 +116,10 @@ export default function TechnicalServicesPage() {
 
        {isFormOpen && (
            <TicketForm 
-               isAdminService={false}
+               isAdminService={true}
                onClose={() => setIsFormOpen(false)} 
                onSuccess={() => {
-                   fetchTickets({ es_admin: false });
+                   fetchTickets({ es_admin: true });
                }} 
            />
        )}
