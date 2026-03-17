@@ -178,32 +178,87 @@ export default function RoleForm({ isOpen, onClose, onSubmit, initialData = null
                                 </Button>
                             </div>
                             
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {allPermissions.map(perm => {
-                                    const isSelected = selectedPermissions.has(perm.id);
-                                    return (
-                                        <div 
-                                            key={perm.id}
-                                            onClick={() => togglePermission(perm.id)}
+                            {/* Grouped by module */}
+                            {Object.entries(
+                                allPermissions.reduce((acc, perm) => {
+                                    const [module] = perm.codigo.split(':');
+                                    if (!acc[module]) acc[module] = [];
+                                    acc[module].push(perm);
+                                    return acc;
+                                }, {})
+                            ).map(([module, perms]) => {
+                                const allSelected = perms.every(p => selectedPermissions.has(p.id));
+                                const someSelected = perms.some(p => selectedPermissions.has(p.id));
+                                const toggleModule = () => {
+                                    const newSet = new Set(selectedPermissions);
+                                    if (allSelected) {
+                                        perms.forEach(p => newSet.delete(p.id));
+                                    } else {
+                                        perms.forEach(p => newSet.add(p.id));
+                                    }
+                                    setSelectedPermissions(newSet);
+                                };
+                                return (
+                                    <div key={module} className="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                        {/* Module header */}
+                                        <div
+                                            onClick={toggleModule}
                                             className={cn(
-                                                "flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm",
-                                                isSelected ? "bg-primary/5 border-primary/30" : "bg-card border-slate-200 dark:border-slate-800 hover:border-slate-300"
+                                                "flex items-center gap-3 px-4 py-2.5 cursor-pointer select-none transition-colors",
+                                                allSelected
+                                                    ? "bg-primary/10 text-primary"
+                                                    : someSelected
+                                                    ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400"
+                                                    : "bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300"
                                             )}
                                         >
                                             <div className={cn(
-                                                "mt-0.5 h-4 w-4 rounded border flex items-center justify-center transition-colors shadow-sm shrink-0",
-                                                isSelected ? "bg-primary border-primary text-primary-foreground" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+                                                "h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-colors",
+                                                allSelected ? "bg-primary border-primary text-white" : someSelected ? "bg-amber-400 border-amber-400 text-white" : "border-slate-300 dark:border-slate-600"
                                             )}>
-                                                {isSelected && <CheckSquare className="h-3 w-3" />}
+                                                {(allSelected || someSelected) && (
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="h-2.5 w-2.5">
+                                                        <polyline points="20 6 9 17 4 12" />
+                                                    </svg>
+                                                )}
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className={cn("text-xs font-bold leading-none mb-1", isSelected && "text-primary")}>{perm.codigo}</p>
-                                                <p className="text-xs text-muted-foreground leading-snug line-clamp-2">{perm.descripcion}</p>
-                                            </div>
+                                            <span className="font-bold text-sm capitalize tracking-wide">{module}</span>
+                                            <span className="ml-auto text-xs font-normal opacity-60">{perms.filter(p => selectedPermissions.has(p.id)).length}/{perms.length}</span>
                                         </div>
-                                    );
-                                })}
-                            </div>
+                                        {/* Individual permissions */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 divide-x divide-y divide-slate-100 dark:divide-slate-800">
+                                            {perms.map(perm => {
+                                                const isSelected = selectedPermissions.has(perm.id);
+                                                return (
+                                                    <div
+                                                        key={perm.id}
+                                                        onClick={() => togglePermission(perm.id)}
+                                                        className={cn(
+                                                            "flex items-start gap-3 p-3 cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50",
+                                                            isSelected && "bg-primary/5"
+                                                        )}
+                                                    >
+                                                        <div className={cn(
+                                                            "mt-0.5 h-4 w-4 rounded border flex items-center justify-center transition-colors shrink-0",
+                                                            isSelected ? "bg-primary border-primary text-white" : "border-slate-300 dark:border-slate-600"
+                                                        )}>
+                                                            {isSelected && (
+                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="h-2.5 w-2.5">
+                                                                    <polyline points="20 6 9 17 4 12" />
+                                                                </svg>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className={cn("text-xs font-bold leading-none mb-1", isSelected && "text-primary")}>{perm.codigo.split(':')[1]}</p>
+                                                            <p className="text-xs text-muted-foreground leading-snug line-clamp-2">{perm.descripcion}</p>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </form>
