@@ -25,5 +25,12 @@ export const authService = {
   getMe: async () => {
     const { data } = await api.get('/auth/me');
     return data;   // { id, email, role, permissions: ['productos:leer', ...] }
+  },
+
+  /** Pubic Registration for clients */
+  registerClient: async (clientData) => {
+    const { data } = await api.post('/auth/register/client', clientData);
+    return data;
   }
 };
+

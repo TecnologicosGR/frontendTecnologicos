@@ -6,10 +6,10 @@ const CLIENTS = 'clients';
 export const salesService = {
 
   // --- CLIENT HELPERS (POS) ---
-  searchClientByDocumento: async (documento) => {
+  searchClients: async (q) => {
     try {
-      const res = await axios.get(`${CLIENTS}/search`, { params: { documento } });
-      return res.data; // null if not found
+      const res = await axios.get(`${CLIENTS}/search`, { params: { q } });
+      return res.data; // array of up to 10 matches
     } catch (err) {
       throw err.response?.data || { detail: 'Error buscando cliente' };
     }

@@ -48,6 +48,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ── Register Client ───────────────────────────────────────────────────────
+  const registerClient = async (clientData) => {
+    try {
+      await authService.registerClient(clientData);
+      // Auto-login after successful registration
+      return await login(clientData.usuario.email, clientData.usuario.password);
+    } catch (error) {
+       let errorMessage = 'Error al registrarse';
+       const detail = error.response?.data?.detail;
+       if (typeof detail === 'string') errorMessage = detail;
+       else if (Array.isArray(detail)) errorMessage = detail.map(e => e.msg).join(', ');
+       return { success: false, error: errorMessage };
+    }
+  };
+
   // ── Logout ────────────────────────────────────────────────────────────────
   const logout = () => {
     authService.logout();
@@ -75,7 +90,7 @@ export const AuthProvider = ({ children }) => {
   const hasAnyPermission = (codes) => codes.some(c => hasPermission(c));
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading: loading, isAdmin, hasPermission, hasAnyPermission, refreshUser: fetchMe }}>
+    <AuthContext.Provider value={{ user, login, logout, registerClient, isLoading: loading, isAdmin, hasPermission, hasAnyPermission, refreshUser: fetchMe }}>
       {children}
     </AuthContext.Provider>
   );

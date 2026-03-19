@@ -10,7 +10,7 @@ import { Badge } from '../../../components/ui/badge';
 import {
   Search, Plus, Minus, Trash2, ShoppingCart, CheckCircle,
   Loader2, Receipt, User, UserPlus, CreditCard, Banknote, X,
-  Phone, Mail, MapPin, Store, Truck, PackageCheck
+  Phone, Mail, MapPin, Store, Truck, PackageCheck, Hash
 } from 'lucide-react';
 
 const PAYMENT_METHODS = ['Efectivo', 'Transferencia', 'Mixto', 'Otro'];
@@ -83,58 +83,151 @@ function QuickClientForm({ documento, onCreated, onCancel }) {
 
 // ── Client Search Panel ───────────────────────────────────────────────────────
 function ClientPanel({ selectedClient, onSelectClient }) {
-  const { toast } = useToast();
-  const [doc, setDoc] = useState('');
-  const [status, setStatus] = useState('idle'); // idle | searching | found | notfound
+  const [query, setQuery]           = useState('');
+  const [results, setResults]       = useState([]);
+  const [searching, setSearching]   = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [open, setOpen]             = useState(false);
   const debounceRef = useRef(null);
+  const wrapperRef  = useRef(null);
 
-  const lookup = useCallback(async (d) => {
-    if (!d || d.length < 3) { setStatus('idle'); return; }
-    setStatus('searching');
-    try {
-      const client = await salesService.searchClientByDocumento(d);
-      if (client) { onSelectClient(client); setStatus('found'); }
-      else { onSelectClient(null); setStatus('notfound'); }
-    } catch { setStatus('idle'); }
-  }, [onSelectClient]);
-
+  // Close dropdown when clicking outside
   useEffect(() => {
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => lookup(doc), 500);
-  }, [doc, lookup]);
+    const handler = (e) => { if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
-  const clear = () => { setDoc(''); onSelectClient(null); setStatus('idle'); setShowCreate(false); };
+  // Debounced search
+  useEffect(() => {
+    if (selectedClient) return; // don't search once a client is selected
+    clearTimeout(debounceRef.current);
+    if (!query || query.length < 2) { setResults([]); setOpen(false); return; }
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const data = await salesService.searchClients(query);
+        setResults(data || []);
+        setOpen(true);
+        setShowCreate(false);
+      } catch { setResults([]); }
+      finally { setSearching(false); }
+    }, 350);
+  }, [query, selectedClient]);
+
+  const select = (client) => {
+    onSelectClient(client);
+    setQuery('');
+    setResults([]);
+    setOpen(false);
+    setShowCreate(false);
+  };
+
+  const clear = () => {
+    onSelectClient(null);
+    setQuery('');
+    setResults([]);
+    setOpen(false);
+    setShowCreate(false);
+  };
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
       <p className="text-sm font-semibold flex items-center gap-2"><User className="h-4 w-4 text-primary" />Cliente</p>
+
+      {/* Selected client chip */}
       {selectedClient ? (
         <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
-          <div className="flex-1">
-            <p className="font-semibold text-sm">{selectedClient.nombres} {selectedClient.apellidos}</p>
-            <p className="text-xs text-slate-400">{selectedClient.documento_identidad || 'Sin documento'}</p>
+          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-black text-primary shrink-0">
+            {selectedClient.nombres?.charAt(0).toUpperCase()}
           </div>
-          <button onClick={clear} className="text-slate-300 hover:text-red-500"><X className="h-4 w-4" /></button>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm truncate">{selectedClient.nombres} {selectedClient.apellidos}</p>
+            <p className="text-xs text-slate-400">{selectedClient.documento_identidad || 'Sin documento'}{selectedClient.telefono ? ` · ${selectedClient.telefono}` : ''}</p>
+          </div>
+          <button onClick={clear} className="text-slate-300 hover:text-red-500 transition-colors shrink-0">
+            <X className="h-4 w-4" />
+          </button>
         </div>
       ) : (
-        <>
+        <div ref={wrapperRef} className="relative">
+          {/* Search input */}
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-            <Input className="pl-9 pr-8" placeholder="Buscar por documento…" value={doc} onChange={e => setDoc(e.target.value)} />
-            {status === 'searching' && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-slate-400" />}
-            {doc && <button onClick={clear} className="absolute right-2.5 top-2.5 text-slate-300 hover:text-slate-600"><X className="h-4 w-4" /></button>}
-          </div>
-          {status === 'notfound' && !showCreate && (
-            <div className="flex items-center justify-between text-sm text-slate-500">
-              <span>No encontrado — venta anónima o crea cliente</span>
-              <button onClick={() => setShowCreate(true)} className="text-primary font-medium hover:underline flex items-center gap-1">
-                <UserPlus className="h-3.5 w-3.5" /> Nuevo
+            <Input
+              className="pl-9 pr-8"
+              placeholder="Buscar por nombre o cédula…"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onFocus={() => results.length > 0 && setOpen(true)}
+              autoComplete="off"
+            />
+            {searching && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-slate-400" />}
+            {query && !searching && (
+              <button onClick={clear} className="absolute right-2.5 top-2.5 text-slate-300 hover:text-slate-600">
+                <X className="h-4 w-4" />
               </button>
+            )}
+          </div>
+
+          {/* Dropdown results */}
+          {open && (results.length > 0 || (query.length >= 2 && !searching)) && (
+            <div className="absolute z-30 mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl overflow-hidden">
+              {results.length > 0 ? (
+                <>
+                  {results.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => select(c)}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors border-b border-slate-50 dark:border-slate-800 last:border-0"
+                    >
+                      <div className="h-8 w-8 rounded-full bg-primary/15 flex items-center justify-center text-xs font-black text-primary shrink-0">
+                        {c.nombres?.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm">{c.nombres} {c.apellidos}</p>
+                        <p className="text-xs text-slate-400">{c.documento_identidad || 'Sin documento'}{c.telefono ? ` · ${c.telefono}` : ''}</p>
+                      </div>
+                    </button>
+                  ))}
+                  {/* Offer to create new even when results exist */}
+                  <button
+                    onClick={() => { setOpen(false); setShowCreate(true); }}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-primary text-sm font-medium hover:bg-primary/5 transition-colors border-t border-slate-100 dark:border-slate-800"
+                  >
+                    <UserPlus className="h-4 w-4" /> Crear nuevo cliente
+                  </button>
+                </>
+              ) : (
+                <div className="px-4 py-3">
+                  <p className="text-sm text-slate-500 mb-2">No se encontraron clientes con "<span className="font-medium">{query}</span>"</p>
+                  <button
+                    onClick={() => { setOpen(false); setShowCreate(true); }}
+                    className="flex items-center gap-2 text-primary text-sm font-medium hover:underline"
+                  >
+                    <UserPlus className="h-4 w-4" /> Crear nuevo cliente
+                  </button>
+                </div>
+              )}
             </div>
           )}
-          {showCreate && <QuickClientForm documento={doc} onCreated={(c) => { onSelectClient(c); setShowCreate(false); setDoc(c.documento_identidad || ''); }} onCancel={() => setShowCreate(false)} />}
-        </>
+
+          {/* Quick create form */}
+          {showCreate && (
+            <QuickClientForm
+              documento={query}
+              onCreated={(c) => { select(c); }}
+              onCancel={() => setShowCreate(false)}
+            />
+          )}
+
+          {/* Hint when no query */}
+          {!query && !showCreate && (
+            <p className="text-xs text-slate-400 text-center pt-1">
+              O deja vacío para venta anónima
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
@@ -226,6 +319,15 @@ function DeliveryPanel({ tipoEntrega, onChangeTipo, direccion, onChangeDireccion
   );
 }
 
+const PROCEDENCIAS = [
+  { id: 'Local', label: 'Local (Físico)' },
+  { id: 'Instagram', label: 'Instagram' },
+  { id: 'Facebook', label: 'Facebook' },
+  { id: 'WhatsApp', label: 'WhatsApp' },
+  { id: 'Web', label: 'Página Web' },
+  { id: 'Otro', label: 'Otro' }
+];
+
 // ── Main POS Page ─────────────────────────────────────────────────────────────
 export default function POSPage() {
   const { createSale, loading } = useSales();
@@ -248,6 +350,7 @@ export default function POSPage() {
   const [montoTransferencia, setMontoTransferencia] = useState(0);
   const [deliveryCost, setDeliveryCost] = useState(0);
   const [direccionEntrega, setDireccionEntrega] = useState('');
+  const [procedencia, setProcedencia] = useState('Local');
   const [notes, setNotes] = useState('');
 
   const [lastSale, setLastSale] = useState(null);
@@ -280,17 +383,18 @@ export default function POSPage() {
         }
         return prev.map(i => i.product.id === product.id ? { ...i, cantidad: i.cantidad + 1 } : i);
       }
-      return [...prev, { product, cantidad: 1, precio: parseFloat(product.precio_venta_normal) }];
+      return [...prev, { product, cantidad: 1, precio: parseFloat(product.precio_venta_normal), numero_serie: '' }];
     });
     setSearchTerm(''); setProducts([]);
   };
 
-  const updateQty = (id, delta) => setCartItems(prev =>
+  const updateQty    = (id, delta) => setCartItems(prev =>
     prev.map(i => i.product.id === id ? { ...i, cantidad: Math.max(0, Math.min(i.cantidad + delta, i.product.existencias)) } : i)
       .filter(i => i.cantidad > 0)
   );
-  const updatePrice = (id, val) => setCartItems(prev => prev.map(i => i.product.id === id ? { ...i, precio: parseFloat(val) || 0 } : i));
-  const removeItem = (id) => setCartItems(prev => prev.filter(i => i.product.id !== id));
+  const updatePrice  = (id, val) => setCartItems(prev => prev.map(i => i.product.id === id ? { ...i, precio: parseFloat(val) || 0 } : i));
+  const updateSerial = (id, val) => setCartItems(prev => prev.map(i => i.product.id === id ? { ...i, numero_serie: val } : i));
+  const removeItem   = (id) => setCartItems(prev => prev.filter(i => i.product.id !== id));
 
   const subtotal = cartItems.reduce((s, i) => s + i.precio * i.cantidad, 0);
   const total = subtotal + (tipoEntrega === 'domicilio' ? deliveryCost : 0);
@@ -325,19 +429,26 @@ export default function POSPage() {
       pagado: pagado,
       monto_efectivo: paymentMethod === 'Mixto' && pagado ? (parseFloat(montoEfectivo) || 0) : 0,
       monto_transferencia: paymentMethod === 'Mixto' && pagado ? (parseFloat(montoTransferencia) || 0) : 0,
+      procedencia: procedencia,
       observaciones: [notes, domObs].filter(Boolean).join(' | ') || null,
       items: cartItems.map(i => ({
         id_producto: i.product.id,
         cantidad: i.cantidad,
-        precio_unitario_aplicado: i.precio
+        precio_unitario_aplicado: i.precio,
+        numero_serie: i.numero_serie?.trim() || null,
       }))
     };
     const result = await createSale(payload);
     if (result.success) {
       setLastSale(result.data);
+      // Reset all form state
       setCartItems([]); setSelectedClient(null); setNotes('');
       setTipoEntrega('en_punto'); setDeliveryCost(0); setDireccionEntrega('');
       setPaymentMethod('Efectivo'); setPagado(true); setMontoEfectivo(0); setMontoTransferencia(0);
+      setProcedencia('Local');
+      setSearchTerm(''); setProducts([]);
+      // Auto-dismiss success banner after 4 seconds
+      setTimeout(() => setLastSale(null), 4000);
     } else {
       toast({ title: '❌ Error', description: result.error, variant: 'destructive' });
     }
@@ -412,24 +523,38 @@ export default function POSPage() {
             ) : (
               <div className="divide-y divide-slate-50 dark:divide-slate-800/50">
                 {cartItems.map(item => (
-                  <div key={item.product.id} className="px-4 py-3 flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{item.product.nombre}</p>
-                      <p className="text-xs text-slate-400">{item.product.codigo_referencia}</p>
+                  <div key={item.product.id} className="px-4 py-3 space-y-2 border-b border-slate-50 dark:border-slate-800/50 last:border-0">
+                    {/* Main row */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{item.product.nombre}</p>
+                        <p className="text-xs text-slate-400">{item.product.codigo_referencia}</p>
+                      </div>
+                      <div className="relative w-28 shrink-0">
+                        <span className="absolute left-2 top-2 text-xs text-slate-400">$</span>
+                        <input type="number"
+                          className="w-full pl-5 pr-2 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 font-bold text-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+                          value={item.precio} onChange={e => updatePrice(item.product.id, e.target.value)} min={0} />
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button onClick={() => updateQty(item.product.id, -1)} className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"><Minus className="h-3 w-3" /></button>
+                        <span className="w-8 text-center text-sm font-bold">{item.cantidad}</span>
+                        <button onClick={() => updateQty(item.product.id, 1)} className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"><Plus className="h-3 w-3" /></button>
+                      </div>
+                      <p className="w-24 text-right font-bold text-sm shrink-0">{formatCurrency(item.precio * item.cantidad)}</p>
+                      <button onClick={() => removeItem(item.product.id)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 className="h-4 w-4" /></button>
                     </div>
-                    <div className="relative w-28 shrink-0">
-                      <span className="absolute left-2 top-2 text-xs text-slate-400">$</span>
-                      <input type="number"
-                        className="w-full pl-5 pr-2 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 font-bold text-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
-                        value={item.precio} onChange={e => updatePrice(item.product.id, e.target.value)} min={0} />
+                    {/* Serial number row */}
+                    <div className="relative">
+                      <Hash className="absolute left-2.5 top-1.5 h-3.5 w-3.5 text-slate-300" />
+                      <input
+                        type="text"
+                        className="w-full pl-7 pr-3 py-1.5 text-xs border border-dashed border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 placeholder-slate-300 focus:outline-none focus:border-primary/40 focus:bg-white dark:focus:bg-slate-800 transition-all"
+                        placeholder="Número de serie (opcional)"
+                        value={item.numero_serie}
+                        onChange={e => updateSerial(item.product.id, e.target.value)}
+                      />
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => updateQty(item.product.id, -1)} className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"><Minus className="h-3 w-3" /></button>
-                      <span className="w-8 text-center text-sm font-bold">{item.cantidad}</span>
-                      <button onClick={() => updateQty(item.product.id, 1)} className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"><Plus className="h-3 w-3" /></button>
-                    </div>
-                    <p className="w-24 text-right font-bold text-sm shrink-0">{formatCurrency(item.precio * item.cantidad)}</p>
-                    <button onClick={() => removeItem(item.product.id)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 ))}
               </div>
@@ -498,6 +623,21 @@ export default function POSPage() {
 
           {/* Client */}
           <ClientPanel selectedClient={selectedClient} onSelectClient={setSelectedClient} />
+
+          {/* Procedencia */}
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-2">
+            <p className="text-sm font-semibold flex items-center gap-2 text-slate-500 uppercase tracking-wider">Procedencia de Venta</p>
+            <div className="flex flex-wrap gap-2">
+              {PROCEDENCIAS.map(p => (
+                <button key={p.id} onClick={() => setProcedencia(p.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${procedencia === p.id 
+                    ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-800' 
+                    : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}`}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Notes */}
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-2">
