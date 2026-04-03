@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useProducts } from '../../features/products/hooks/useProducts';
-import { useCategories } from '../../features/categories/hooks/useCategories';
+import { usePublicCatalog } from '../../features/products/hooks/usePublicCatalog';
 import { useCart } from '../../features/sales/hooks/useCart';
 import PublicNavbar from './components/PublicNavbar';
 import PublicFooter from './components/PublicFooter';
@@ -12,18 +11,12 @@ import { formatCurrency } from '../../lib/utils';
 import { Link } from 'react-router-dom';
 
 export default function CatalogPage() {
-  const { products, loading: loadingProducts, fetchProducts } = useProducts();
-  const { categories, fetchCategories } = useCategories();
+  const { products, categories, loadingProducts } = usePublicCatalog();
   const { addToCart } = useCart();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-
-  useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, [fetchProducts, fetchCategories]);
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -69,7 +62,7 @@ export default function CatalogPage() {
         
         {/* Sidebar Filters (Desktop) */}
         <aside className="hidden md:block w-64 shrink-0">
-          <div className="sticky top-40 space-y-8">
+          <div className="sticky top-40 max-h-[calc(100vh-11rem)] overflow-y-auto pr-2 space-y-8">
             <div>
               <h3 className="font-bold text-lg mb-4 text-slate-900 dark:text-white">Categorías</h3>
               <div className="space-y-2">

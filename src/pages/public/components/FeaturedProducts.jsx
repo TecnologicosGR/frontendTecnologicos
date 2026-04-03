@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useProducts } from '../../../features/products/hooks/useProducts'; // Reuse existing hook
+import { usePublicCatalog } from '../../../features/products/hooks/usePublicCatalog';
 import { useCart } from '../../../features/sales/hooks/useCart';
 import { ShoppingCart, Star, Loader2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
@@ -24,7 +24,7 @@ const item = {
 };
 
 export default function FeaturedProducts() {
-  const { products, loading } = useProducts();
+  const { products, loadingProducts: loading } = usePublicCatalog();
   const { addToCart } = useCart();
   
   // Just grab the first 4 for now as featured

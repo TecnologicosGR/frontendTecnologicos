@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useCart } from '../../features/sales/hooks/useCart';
+import { companyService } from '../../features/company/services/company.service';
 import api from '../../lib/axios';
-import { ShoppingBag, CreditCard, ArrowLeft, Building, Truck, ShieldCheck, Banknote, Loader2, Cpu } from 'lucide-react';
+import { ShoppingBag, ShoppingCart, CreditCard, ArrowLeft, ArrowRight, Building, Truck, ShieldCheck, Banknote, Loader2, Cpu, MapPin } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { formatCurrency } from '../../lib/utils';
 import { useToast } from '../../components/ui/toast';
@@ -15,17 +16,59 @@ export default function CheckoutPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const [paymentMethod, setPaymentMethod] = useState('TRANSFERENCIA');
-  const [deliveryType, setDeliveryType] = useState('DOMICILIO');
+  const [paymentMethod, setPaymentMethod] = useState('Transferencia');
+  const [deliveryType, setDeliveryType] = useState('domicilio');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
+  const [deliveryZones, setDeliveryZones] = useState([]);
+  const [baseDeliveryPrice, setBaseDeliveryPrice] = useState(0);
+  const [selectedZoneIndex, setSelectedZoneIndex] = useState('');
+  const [loadingDeliveryConfig, setLoadingDeliveryConfig] = useState(true);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const cartSubtotal = Array.isArray(cart.items)
+    ? cart.items.reduce((acc, item) => acc + Number(item.subtotal || 0), 0)
+    : 0;
+  const cartTotal = Number(cart.total ?? cartSubtotal);
+  const selectedZone = selectedZoneIndex !== '' ? deliveryZones[Number(selectedZoneIndex)] : null;
+  const shippingCost = deliveryType === 'domicilio'
+    ? Number(selectedZone?.precio_base ?? baseDeliveryPrice ?? 0)
+    : 0;
+  const finalTotal = cartTotal + shippingCost;
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadDeliveryConfig = async () => {
+      try {
+        const config = await companyService.getConfig();
+        if (!mounted) return;
+
+        const zones = Array.isArray(config.zonas_domicilio)
+          ? config.zonas_domicilio.filter((z) => z && z.nombre)
+          : [];
+
+        setDeliveryZones(zones);
+        setBaseDeliveryPrice(parseFloat(config.precio_domicilio_base) || 0);
+        setSelectedZoneIndex(zones.length > 0 ? '0' : '');
+      } catch (error) {
+        if (!mounted) return;
+        setDeliveryZones([]);
+        setBaseDeliveryPrice(0);
+      } finally {
+        if (mounted) setLoadingDeliveryConfig(false);
+      }
+    };
+
+    loadDeliveryConfig();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Redireccionar si no hay sesión o carrito vacío
   if (!user) {
-    navigate('/auth/login');
-    return null;
+    return <Navigate to="/auth/login" replace />;
   }
 
   if (!cartLoading && cart.items.length === 0) {
@@ -43,8 +86,13 @@ export default function CheckoutPage() {
 
   const handleCheckout = async (e) => {
     e.preventDefault();
-    if (deliveryType === 'DOMICILIO' && (!address || !city)) {
+    if (deliveryType === 'domicilio' && (!address || !city)) {
       toast({ title: 'Atención', description: 'Por favor completa tu dirección y ciudad para el envío.', variant: 'destructive' });
+      return;
+    }
+
+    if (deliveryType === 'domicilio' && deliveryZones.length > 0 && selectedZoneIndex === '') {
+      toast({ title: 'Atención', description: 'Selecciona una zona de domicilio para calcular el envío.', variant: 'destructive' });
       return;
     }
 
@@ -52,19 +100,50 @@ export default function CheckoutPage() {
     try {
       // Build order observations based on delivery info
       let obs = `Tipo Entrega: ${deliveryType}. `;
-      if (deliveryType === 'DOMICILIO') {
+      if (deliveryType === 'domicilio') {
          obs += `Dirección: ${address}, ${city}. `;
+        if (selectedZone?.nombre) obs += `Zona: ${selectedZone.nombre}. `;
+        obs += `Envío: ${formatCurrency(shippingCost)}. `;
       }
       if (notes) obs += `Notas Adicionales: ${notes}`;
+
+      const tipoEntregaBackend = deliveryType === 'domicilio' ? 'domicilio' : 'recoger_en_punto';
+      const direccionEntrega = deliveryType === 'domicilio'
+        ? `${address}, ${city}${selectedZone?.nombre ? ` (${selectedZone.nombre})` : ''}`
+        : null;
 
       const payload = {
         metodo_pago: paymentMethod,
         observaciones: obs,
+        tipo_entrega: tipoEntregaBackend,
+        direccion_entrega: direccionEntrega,
+        procedencia: 'web',
         // Al ser Cliente, el backend ignora "items" y coge el carrito directamente.
         items: [] 
       };
 
       const { data } = await api.post('/sales/', payload);
+
+      const itemsSummary = (cart.items || [])
+        .map((item) => `- ${item.nombre_producto} x${item.cantidad} (${formatCurrency(item.subtotal)})`)
+        .join('%0A');
+      const deliverySummary = deliveryType === 'domicilio'
+        ? `Domicilio: ${address}, ${city}${selectedZone?.nombre ? ` (${selectedZone.nombre})` : ''}`
+        : 'Recoge en tienda';
+      const whatsappText = [
+        `Nuevo pedido web #${data.id || ''}`,
+        `Cliente: ${user?.email || 'N/D'}`,
+        `Pago: ${paymentMethod}`,
+        `${deliverySummary}`,
+        `Envío: ${formatCurrency(shippingCost)}`,
+        `Total productos: ${formatCurrency(cartTotal)}`,
+        `Total final: ${formatCurrency(finalTotal)}`,
+        notes ? `Notas: ${notes}` : '',
+        'Items:',
+        itemsSummary || '- Sin items'
+      ].filter(Boolean).join('%0A');
+
+      window.open(`https://wa.me/573001234567?text=${whatsappText}`, '_blank');
       
       toast({
         title: "¡Pedido Confirmado!",
@@ -84,6 +163,7 @@ export default function CheckoutPage() {
         description: error.response?.data?.detail || "No pudimos procesar tu pedido.",
         variant: "destructive"
       });
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -123,16 +203,16 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <button
                   type="button"
-                  onClick={() => setDeliveryType('DOMICILIO')}
-                  className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all ${deliveryType === 'DOMICILIO' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-300 dark:hover:border-slate-700'}`}
+                  onClick={() => setDeliveryType('domicilio')}
+                  className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all ${deliveryType === 'domicilio' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-300 dark:hover:border-slate-700'}`}
                 >
                   <Truck size={24} />
                   <span className="font-bold">Envío a Domicilio</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setDeliveryType('PUNTO')}
-                  className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all ${deliveryType === 'PUNTO' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-300 dark:hover:border-slate-700'}`}
+                  onClick={() => setDeliveryType('recoger_en_punto')}
+                  className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all ${deliveryType === 'recoger_en_punto' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-300 dark:hover:border-slate-700'}`}
                 >
                   <Building size={24} />
                   <span className="font-bold">Recoger en Tienda</span>
@@ -140,7 +220,7 @@ export default function CheckoutPage() {
               </div>
 
               <AnimatePresence>
-                {deliveryType === 'DOMICILIO' && (
+                {deliveryType === 'domicilio' && (
                   <motion.div 
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
@@ -154,7 +234,7 @@ export default function CheckoutPage() {
                             value={address} onChange={e => setAddress(e.target.value)}
                             placeholder="Ej. Calle 123 #45-67 Apto 101"
                             className="w-full h-12 bg-slate-50 dark:bg-[#0A0A0A] border border-slate-200 dark:border-slate-800 rounded-xl px-4 focus:ring-2 focus:ring-primary focus:outline-none"
-                            required={deliveryType === 'DOMICILIO'}
+                            required={deliveryType === 'domicilio'}
                           />
                        </div>
                        <div className="space-y-1">
@@ -163,9 +243,37 @@ export default function CheckoutPage() {
                             value={city} onChange={e => setCity(e.target.value)}
                             placeholder="Ej. Bogotá"
                             className="w-full h-12 bg-slate-50 dark:bg-[#0A0A0A] border border-slate-200 dark:border-slate-800 rounded-xl px-4 focus:ring-2 focus:ring-primary focus:outline-none"
-                            required={deliveryType === 'DOMICILIO'}
+                             required={deliveryType === 'domicilio'}
                           />
                        </div>
+                    </div>
+
+                    <div className="space-y-1 mt-2">
+                      <label className="text-xs font-semibold uppercase text-slate-500">Zona de Domicilio</label>
+                      {loadingDeliveryConfig ? (
+                        <div className="h-12 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" />
+                      ) : deliveryZones.length > 0 ? (
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                          <select
+                            value={selectedZoneIndex}
+                            onChange={(e) => setSelectedZoneIndex(e.target.value)}
+                            className="w-full h-12 bg-slate-50 dark:bg-[#0A0A0A] border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 focus:ring-2 focus:ring-primary focus:outline-none"
+                            required={deliveryType === 'domicilio'}
+                          >
+                            {deliveryZones.map((zone, idx) => (
+                              <option key={`${zone.nombre}-${idx}`} value={String(idx)}>
+                                {zone.nombre} - {formatCurrency(zone.precio_base || 0)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : (
+                        <div className="h-12 bg-slate-50 dark:bg-[#0A0A0A] border border-slate-200 dark:border-slate-800 rounded-xl px-4 flex items-center justify-between text-sm">
+                          <span className="text-slate-500">Tarifa base de domicilio</span>
+                          <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(baseDeliveryPrice)}</span>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 )}
@@ -191,13 +299,13 @@ export default function CheckoutPage() {
               </h2>
 
               <div className="space-y-3">
-                 <label className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${paymentMethod === 'TRANSFERENCIA' ? 'border-primary bg-primary/5' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}>
+                 <label className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${paymentMethod === 'Transferencia' ? 'border-primary bg-primary/5' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}>
                     <input 
                       type="radio" 
                       name="payment_method" 
-                      value="TRANSFERENCIA" 
-                      checked={paymentMethod === 'TRANSFERENCIA'}
-                      onChange={() => setPaymentMethod('TRANSFERENCIA')}
+                      value="Transferencia" 
+                      checked={paymentMethod === 'Transferencia'}
+                      onChange={() => setPaymentMethod('Transferencia')}
                       className="mt-1 w-4 h-4 text-primary focus:ring-primary"
                     />
                     <div className="flex-1">
@@ -206,13 +314,13 @@ export default function CheckoutPage() {
                     </div>
                  </label>
                  
-                 <label className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${paymentMethod === 'EFECTIVO' ? 'border-primary bg-primary/5' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}>
+                 <label className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${paymentMethod === 'Efectivo' ? 'border-primary bg-primary/5' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}>
                     <input 
                       type="radio" 
                       name="payment_method" 
-                      value="EFECTIVO" 
-                      checked={paymentMethod === 'EFECTIVO'}
-                      onChange={() => setPaymentMethod('EFECTIVO')}
+                      value="Efectivo" 
+                      checked={paymentMethod === 'Efectivo'}
+                      onChange={() => setPaymentMethod('Efectivo')}
                       className="mt-1 w-4 h-4 text-primary focus:ring-primary"
                     />
                     <div className="flex-1">
@@ -237,8 +345,8 @@ export default function CheckoutPage() {
                  {cart.items.map((item) => (
                    <li key={item.id_producto} className="flex gap-4">
                      <div className="w-16 h-16 bg-white dark:bg-[#1A1A1A] rounded-lg border border-slate-200 dark:border-white/5 overflow-hidden shrink-0 flex items-center justify-center p-1">
-                        {item.url_imagen ? (
-                          <img src={item.url_imagen} alt={item.nombre_producto} className="w-full h-full object-contain" />
+                        {item.urls_imagenes?.[0] ? (
+                          <img src={item.urls_imagenes[0]} alt={item.nombre_producto} className="w-full h-full object-contain" />
                         ) : (
                           <span className="text-[10px] font-black text-slate-300">TECH</span>
                         )}
@@ -257,15 +365,17 @@ export default function CheckoutPage() {
                <div className="space-y-3 mb-8 pt-6 border-t border-slate-200 dark:border-white/10">
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Subtotal</span>
-                    <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(cart.subtotal)}</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(cartSubtotal)}</span>
                   </div>
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Envío</span>
-                    <span className="font-medium text-green-500">{deliveryType === 'PUNTO' ? 'Gratis' : 'Por calcular'}</span>
+                    <span className="font-medium text-green-500">
+                      {deliveryType === 'recoger_en_punto' ? 'Gratis' : formatCurrency(shippingCost)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-2xl font-black pt-4 border-t border-slate-200 dark:border-white/10 text-slate-900 dark:text-white mt-4">
                     <span>Total a Pagar</span>
-                    <span className="text-primary">{formatCurrency(cart.total)}</span>
+                    <span className="text-primary">{formatCurrency(finalTotal)}</span>
                   </div>
                </div>
 
