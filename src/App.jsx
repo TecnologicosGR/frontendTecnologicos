@@ -6,6 +6,7 @@ import { ToastProvider } from './components/ui/toast';
 import { ThemeProvider } from './components/theme-provider';
 import AdminLayout from './components/layout/AdminLayout';
 import LoginPage from './features/auth/pages/LoginPage';
+import AdminLoginPage from './features/auth/pages/AdminLoginPage';
 import RegisterPage from './features/auth/pages/RegisterPage';
 
 // ── Lazy-loaded pages (each becomes its own JS chunk) ───────────────────────
@@ -63,7 +64,10 @@ const ProtectedRoute = () => {
 const PublicRoute = () => {
   const { user, isLoading } = useAuth();
   if (isLoading) return <PageLoader />;
-  if (user) return <Navigate to="/admin/dashboard" replace />;
+  if (user) {
+    if (user.role === 'CLIENTE') return <Navigate to="/mi-cuenta" replace />;
+    return <Navigate to="/admin/dashboard" replace />;
+  }
   return <Outlet />;
 };
 
@@ -87,6 +91,7 @@ function App() {
                   {/* Public Routes */}
                   <Route element={<PublicRoute />}>
                     <Route path="/auth/login" element={<LoginPage />} />
+                    <Route path="/staff-login" element={<AdminLoginPage />} />
                     <Route path="/auth/register" element={<RegisterPage />} />
                   </Route>
 

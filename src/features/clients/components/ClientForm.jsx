@@ -121,8 +121,14 @@ export default function ClientForm({ isOpen, onClose, onSubmit, initialData = nu
 
     setIsSubmitting(true);
     
+    // Sanitize data before submitting (pydantic strict EmailStr validation fails with empty string)
+    const payload = { ...formData };
+    if (!payload.email || payload.email.trim() === '') {
+        payload.email = null;
+    }
+    
     try {
-        await onSubmit(formData);
+        await onSubmit(payload);
     } finally {
         setIsSubmitting(false);
     }

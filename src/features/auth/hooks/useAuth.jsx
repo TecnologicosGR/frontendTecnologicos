@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
         const me = await authService.getMe();
         setUser(me);
         localStorage.setItem('user', JSON.stringify(me));
-        return { success: true };
+        return { success: true, user: me };
       }
     } catch (error) {
       let errorMessage = 'Error al iniciar sesión';

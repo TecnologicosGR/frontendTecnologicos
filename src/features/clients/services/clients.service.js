@@ -17,10 +17,19 @@ export const clientsService = {
   },
 
   create: async (clientData) => {
-    // POST /auth/register/client
-    // Payload from docs: email, password, documento_identidad, nombres, apellidos, telefono, direccion
-    const { data } = await api.post('/auth/register/client', clientData);
-    return data;
+    // Si el administrador proveyó email y contraseña, registramos cliente en el sistema auth
+    if (clientData.email && clientData.password && clientData.email.trim() !== '') {
+      const { data } = await api.post('/auth/register/client', clientData);
+      return data;
+    } else {
+      // Si el email está vacío o nulo, o no hay password, es un cliente rápido
+      const payload = { ...clientData };
+      delete payload.password;
+      if (!payload.email || payload.email.trim() === '') delete payload.email;
+      
+      const { data } = await api.post('/clients/quick', payload);
+      return data;
+    }
   },
 
   update: async (id, clientData) => {
