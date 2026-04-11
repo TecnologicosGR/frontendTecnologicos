@@ -32,9 +32,10 @@ export const technicalService = {
 
   updateStatus: async (id, statusData) => {
     try {
-      const { status, note } = statusData;
+      const { status, note, payment_method } = statusData;
       const params = { status };
       if (note) params.note = note;
+      if (payment_method) params.payment_method = payment_method;
       const response = await axios.patch(`${BASE_URL}/${id}/status`, null, { params });
       return response.data;
     } catch (error) {
@@ -107,6 +108,33 @@ export const technicalService = {
           return response.data;
       } catch (error) {
           throw error.response?.data || { detail: 'Error al actualizar ticket' };
+      }
+  },
+
+  getRepuestos: async (ticketId) => {
+      try {
+          const response = await axios.get(`${BASE_URL}/${ticketId}/repuestos`);
+          return response.data;
+      } catch (error) {
+          throw error.response?.data || { detail: 'Error al cargar repuestos' };
+      }
+  },
+
+  addRepuesto: async (ticketId, data) => {
+      try {
+          const response = await axios.post(`${BASE_URL}/${ticketId}/repuestos`, data);
+          return response.data;
+      } catch (error) {
+          throw error.response?.data || { detail: 'Error al agregar repuesto' };
+      }
+  },
+
+  deleteRepuesto: async (repuestoId) => {
+      try {
+          const response = await axios.delete(`${BASE_URL}/repuestos/${repuestoId}`);
+          return response.data;
+      } catch (error) {
+          throw error.response?.data || { detail: 'Error al eliminar repuesto' };
       }
   }
 };

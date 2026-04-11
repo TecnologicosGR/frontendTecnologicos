@@ -104,7 +104,6 @@ export default function ClientForm({ isOpen, onClose, onSubmit, initialData = nu
     
     const emailError = validateField('email', formData.email);
     if (emailError) newErrors.email = emailError;
-    if (!formData.email) newErrors.email = "Campo requerido";
 
     const phoneError = validateField('telefono', formData.telefono);
     if (phoneError) newErrors.telefono = phoneError;
@@ -113,9 +112,6 @@ export default function ClientForm({ isOpen, onClose, onSubmit, initialData = nu
     if (!initialData) {
         const docError = validateField('documento_identidad', formData.documento_identidad);
         if (docError) newErrors.documento_identidad = docError;
-        if (!formData.documento_identidad) newErrors.documento_identidad = "Campo requerido";
-        
-        if (!formData.password) newErrors.password = "Campo requerido";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -164,13 +160,11 @@ export default function ClientForm({ isOpen, onClose, onSubmit, initialData = nu
                      <label className="text-sm font-medium">
                         Documento Identidad 
                         {initialData && <span className="text-muted-foreground text-xs ml-1">(No editable)</span>}
-                        {!initialData && <span className="text-destructive">*</span>}
                      </label>
                      <Input 
                         name="documento_identidad" 
                         value={formData.documento_identidad} 
                         onChange={handleChange} 
-                        required 
                         disabled={!!initialData} 
                         placeholder="Ej. 1234567890" 
                         className={cn("h-10", errors.documento_identidad && "border-destructive focus-visible:ring-destructive", initialData && "bg-muted")} 
@@ -178,13 +172,12 @@ export default function ClientForm({ isOpen, onClose, onSubmit, initialData = nu
                      {errors.documento_identidad && <p className="text-xs text-destructive">{errors.documento_identidad}</p>}
                 </div>
                  <div className="space-y-2">
-                     <label className="text-sm font-medium">Email <span className="text-destructive">*</span></label>
+                     <label className="text-sm font-medium">Email</label>
                      <Input 
                         type="email" 
                         name="email" 
                         value={formData.email} 
                         onChange={handleChange} 
-                        required 
                         placeholder="cliente@empresa.com" 
                         className={cn("h-10", errors.email && "border-destructive focus-visible:ring-destructive")} 
                      />
@@ -194,8 +187,8 @@ export default function ClientForm({ isOpen, onClose, onSubmit, initialData = nu
 
             {!initialData && (
                 <div className="space-y-2">
-                    <label className="text-sm font-medium">Contraseña <span className="text-destructive">*</span></label>
-                    <Input type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="••••••••" className="h-10" />
+                    <label className="text-sm font-medium">Contraseña</label>
+                    <Input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="••••••••" className="h-10" />
                 </div>
             )}
 
@@ -213,8 +206,8 @@ export default function ClientForm({ isOpen, onClose, onSubmit, initialData = nu
                     {errors.telefono && <p className="text-xs text-destructive">{errors.telefono}</p>}
                 </div>
                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Dirección <span className="text-destructive">*</span></label>
-                    <Input name="direccion" value={formData.direccion} onChange={handleChange} required placeholder="Calle 123 # 45-67" className="h-10" />
+                    <label className="text-sm font-medium">Dirección</label>
+                    <Input name="direccion" value={formData.direccion} onChange={handleChange} placeholder="Calle 123 # 45-67" className="h-10" />
                 </div>
             </div>
 

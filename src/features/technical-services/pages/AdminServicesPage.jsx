@@ -8,6 +8,7 @@ import { cn } from '../../../lib/utils';
 import { useAuth } from '../../auth/hooks/useAuth';
 import TicketForm from '../components/TicketForm';
 import TicketDetailPage from '../components/TicketDetailPage';
+import { printTicketReceipt } from '../utils/printReceipt';
 
 export default function AdminServicesPage() {
   const { tickets, loading, fetchTickets } = useTechnicalServices();
@@ -104,21 +105,19 @@ export default function AdminServicesPage() {
                        </div>
                    </div>
 
-                   {/* Actions */}
                    <div className="flex items-center gap-2">
                        <Button variant="outline" size="sm" onClick={() => setSelectedTicketId(ticket.id)}>
                            Ver Detalles
                        </Button>
-                       <a
-                         href={`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/technical-services/${ticket.id}/ticket`}
-                         target="_blank"
-                         rel="noreferrer"
-                         title="Descargar ticket PDF"
+                       <Button 
+                         variant="ghost" 
+                         size="sm" 
+                         className="gap-1 text-primary"
+                         onClick={() => printTicketReceipt(ticket, 'Consultar detalles')}
+                         title="Imprimir ticket PDF"
                        >
-                         <Button variant="ghost" size="sm" className="gap-1 text-primary">
-                           <FileText className="h-4 w-4" /> Ticket
-                         </Button>
-                       </a>
+                         <FileText className="h-4 w-4" /> Ticket
+                       </Button>
                    </div>
                </div>
            ))}

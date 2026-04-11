@@ -2,20 +2,23 @@ import React, { useEffect, useState } from 'react';
 import { useTechnicalServices } from '../hooks/useTechnicalServices';
 import { technicalService } from '../services/technical.service';
 import { useServiceCatalog } from '../hooks/useServiceCatalog';
+import { useProducts } from '../../products/hooks/useProducts';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
-import { X, CheckCircle, Clock, AlertTriangle, PenTool, Upload, FileText, Link, ExternalLink, Calendar, Smartphone, Shield, Image as ImageIcon } from 'lucide-react';
+import { X, CheckCircle, Clock, AlertTriangle, PenTool, Upload, FileText, Link, ExternalLink, Calendar, Smartphone, Shield, Image as ImageIcon, Box, Trash2 } from 'lucide-react';
 import { useToast } from '../../../components/ui/toast';
 import { cn } from '../../../lib/utils';
 import PhotoUploadModal from './PhotoUploadModal';
 
 export default function TicketDetailPage({ ticketId, onClose }) {
-  const { currentTicket, fetchTicketById, updateTicketStatus, addAppliedService, updateTicket, loading } = useTechnicalServices();
+  const { currentTicket, fetchTicketById, updateTicketStatus, addAppliedService, updateTicket, getRepuestos, addRepuesto, deleteRepuesto, loading } = useTechnicalServices();
   const { catalog, fetchCatalog } = useServiceCatalog();
+  const { products, fetchProducts } = useProducts();
   const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState('details'); // details, services, evidence
   const [appliedServices, setAppliedServices] = useState([]);
+  const [repuestos, setRepuestos] = useState([]);
   const [loadingServices, setLoadingServices] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   
@@ -23,11 +26,16 @@ export default function TicketDetailPage({ ticketId, onClose }) {
   const [diagnosis, setDiagnosis] = useState('');
   const [savingDiagnosis, setSavingDiagnosis] = useState(false);
 
+  // Delivery / Payment state
+  const [pendingDelivery, setPendingDelivery] = useState(false);
+
   // Add Service state
-  const [isCustomService, setIsCustomService] = useState(false);
+  const [inputMode, setInputMode] = useState('catalog'); // 'catalog', 'manual', 'inventory'
   const [selectedServiceId, setSelectedServiceId] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState('');
   const [customServiceName, setCustomServiceName] = useState('');
   const [servicePrice, setServicePrice] = useState('');
+  const [serviceQuantity, setServiceQuantity] = useState(1);
   const [serviceObservation, setServiceObservation] = useState('');
   const [addingService, setAddingService] = useState(false);
 
@@ -35,9 +43,11 @@ export default function TicketDetailPage({ ticketId, onClose }) {
     if(ticketId) {
         fetchTicketById(ticketId);
         fetchCatalog(); 
+        fetchProducts();
         fetchAppliedServices();
+        fetchRepuestos();
     }
-  }, [ticketId, fetchTicketById, fetchCatalog]);
+  }, [ticketId, fetchTicketById, fetchCatalog, fetchProducts]);
 
   useEffect(() => {
       if (currentTicket) {
@@ -58,10 +68,23 @@ export default function TicketDetailPage({ ticketId, onClose }) {
       }
   };
 
-  const handleStatusChange = async (newStatus) => {
-      const result = await updateTicketStatus(ticketId, newStatus);
+  const fetchRepuestos = async () => {
+      if (!ticketId) return;
+      const result = await getRepuestos(ticketId);
+      if (result.success) setRepuestos(result.data);
+  };
+
+  const handleStatusChange = async (newStatus, paymentMethod = null) => {
+      // If setting to 'Entregado' but no payment method is provided yet, show the modal
+      if (newStatus === 'Entregado' && !paymentMethod) {
+          setPendingDelivery(true);
+          return;
+      }
+
+      const result = await updateTicketStatus(ticketId, newStatus, null, paymentMethod);
       if (result.success) {
           toast({ title: "Estado Actualizado", variant: "success" });
+          setPendingDelivery(false);
       } else {
           toast({ title: "Error", description: result.error, variant: "destructive" });
       }
@@ -80,8 +103,30 @@ export default function TicketDetailPage({ ticketId, onClose }) {
   };
 
   const handleAddService = async () => {
-      // Validar según modo
-      if (isCustomService) {
+      // Inventory Mode (Repuesto)
+      if (inputMode === 'inventory') {
+          if (!selectedProductId || !servicePrice) return;
+          setAddingService(true);
+          const result = await addRepuesto(ticketId, {
+              id_producto: parseInt(selectedProductId),
+              cantidad: parseInt(serviceQuantity) || 1,
+              precio_cobrado: parseFloat(servicePrice)
+          });
+          setAddingService(false);
+          if (result.success) {
+              toast({ title: "Repuesto Agregado", variant: "success" });
+              setSelectedProductId('');
+              setServicePrice('');
+              setServiceQuantity(1);
+              fetchRepuestos();
+          } else {
+              toast({ title: "Error", description: result.error, variant: "destructive" });
+          }
+          return;
+      }
+
+      // Catalog or Manual Mode (Mano de Obra)
+      if (inputMode === 'manual') {
           if (!customServiceName || !servicePrice) return;
       } else {
           if (!selectedServiceId || !servicePrice) return;
@@ -91,8 +136,8 @@ export default function TicketDetailPage({ ticketId, onClose }) {
       
       const data = {
           id_servicio: ticketId,
-          id_tipo_servicio: isCustomService ? null : parseInt(selectedServiceId),
-          nombre_servicio: isCustomService ? customServiceName : null,
+          id_tipo_servicio: inputMode === 'manual' ? null : parseInt(selectedServiceId),
+          nombre_servicio: inputMode === 'manual' ? customServiceName : null,
           precio_cobrado: parseFloat(servicePrice),
           observacion_tecnica: serviceObservation
       };
@@ -112,9 +157,20 @@ export default function TicketDetailPage({ ticketId, onClose }) {
       }
   };
 
+  const handleDeleteRepuesto = async (id) => {
+      const result = await deleteRepuesto(id);
+      if (result.success) {
+          toast({ title: "Repuesto removido", variant: "success" });
+          fetchRepuestos();
+      } else {
+          toast({ title: "Error", description: result.error, variant: "destructive" });
+      }
+  };
+
   if (loading || !currentTicket) return <div className="p-10 text-center">Cargando...</div>;
 
-  const totalServices = appliedServices.reduce((sum, s) => sum + Number(s.precio_cobrado), 0);
+  const totalServices = appliedServices.reduce((sum, s) => sum + Number(s.precio_cobrado), 0) + 
+                        repuestos.reduce((sum, r) => sum + (Number(r.precio_cobrado) * r.cantidad), 0);
   const evidencePhotos = currentTicket.urls_evidencia_fotos || [];
 
   return (
@@ -201,18 +257,32 @@ export default function TicketDetailPage({ ticketId, onClose }) {
                    <div className="pt-6 border-t border-slate-200 dark:border-slate-800">
                        <label className="text-xs font-bold text-slate-400 block mb-3 uppercase">Acciones Rápidas</label>
                        <div className="grid grid-cols-2 gap-2">
-                           {['En Reparación', 'Terminado', 'Entregado'].map(status => (
-                               <Button 
-                                    key={status} 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className={cn("text-xs justify-start", currentTicket.estado_actual === status && "bg-slate-100 border-slate-300 dark:bg-slate-800")}
-                                    onClick={() => handleStatusChange(status)}
-                               >
-                                   {status}
-                               </Button>
-                           ))}
-                       </div>
+                            {['En Reparación', 'Terminado'].map(status => (
+                                <Button 
+                                     key={status} 
+                                     variant="outline" 
+                                     size="sm" 
+                                     className={cn("text-xs justify-start", currentTicket.estado_actual === status && "bg-slate-100 border-slate-300 dark:bg-slate-800")}
+                                     onClick={() => handleStatusChange(status)}
+                                >
+                                    {status}
+                                </Button>
+                            ))}
+                            
+                            {currentTicket.estado_actual !== 'Entregado' ? (
+                                <Button 
+                                     onClick={() => handleStatusChange('Entregado')}
+                                     className="col-span-2 mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 shadow-[0_0_15px_-3px_rgba(5,150,105,0.3)] hover:shadow-[0_0_20px_-3px_rgba(5,150,105,0.5)] transition-all"
+                                >
+                                    💳 Cobrar y Entregar
+                                </Button>
+                            ) : (
+                                <div className="col-span-2 mt-2 text-center p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-emerald-200 dark:border-emerald-800/30">
+                                    <CheckCircle className="h-4 w-4" />
+                                    Pagado en {currentTicket.metodo_pago || 'Efectivo'}
+                                </div>
+                            )}
+                        </div>
                    </div>
                    
                    {/* Tracking Link */}
@@ -319,34 +389,40 @@ export default function TicketDetailPage({ ticketId, onClose }) {
                        </div>
                    )}
 
-                   {/* TAB: SERVICES */}
+                   {/* TAB: SERVICES & PARTS */}
                    {activeTab === 'services' && (
                        <div className="space-y-8 max-w-4xl mx-auto">
-                           {/* Add Service Card */}
+                           {/* Add Service/Part Card */}
                            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                                <div className="flex items-center justify-between mb-4">
                                    <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                                       <PenTool className="h-4 w-4"/> Agregar Servicio / Repuesto
+                                       <PenTool className="h-4 w-4"/> Agregar Costo a la Orden
                                    </h3>
                                    <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
                                         <button 
-                                            onClick={() => setIsCustomService(false)}
-                                            className={cn("px-3 py-1 text-xs font-medium rounded-md transition-all", !isCustomService ? "bg-white dark:bg-slate-700 shadow text-slate-900 dark:text-white" : "text-slate-500 hover:text-slate-700")}
+                                            onClick={() => setInputMode('catalog')}
+                                            className={cn("px-3 py-1 text-xs font-medium rounded-md transition-all", inputMode==='catalog' ? "bg-white dark:bg-slate-700 shadow text-slate-900 dark:text-white" : "text-slate-500 hover:text-slate-700")}
                                         >
                                             Catálogo
                                         </button>
                                         <button 
-                                            onClick={() => setIsCustomService(true)}
-                                            className={cn("px-3 py-1 text-xs font-medium rounded-md transition-all", isCustomService ? "bg-white dark:bg-slate-700 shadow text-slate-900 dark:text-white" : "text-slate-500 hover:text-slate-700")}
+                                            onClick={() => setInputMode('manual')}
+                                            className={cn("px-3 py-1 text-xs font-medium rounded-md transition-all", inputMode==='manual' ? "bg-white dark:bg-slate-700 shadow text-slate-900 dark:text-white" : "text-slate-500 hover:text-slate-700")}
                                         >
                                             Manual
+                                        </button>
+                                        <button 
+                                            onClick={() => setInputMode('inventory')}
+                                            className={cn("px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1", inputMode==='inventory' ? "bg-indigo-600 shadow text-white" : "text-slate-500 hover:text-slate-700")}
+                                        >
+                                            <Box className="w-3 h-3"/> Repuesto
                                         </button>
                                    </div>
                                </div>
                                
                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                                   <div className="md:col-span-2">
-                                       {!isCustomService ? (
+                                   {inputMode === 'catalog' && (
+                                       <div className="md:col-span-2">
                                            <select 
                                                 className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
                                                 value={selectedServiceId}
@@ -357,54 +433,91 @@ export default function TicketDetailPage({ ticketId, onClose }) {
                                                     if(svc) setServicePrice(svc.precio_sugerido);
                                                 }}
                                            >
-                                               <option value="">Seleccionar del Catálogo...</option>
+                                               <option value="">Seleccionar Reparación...</option>
                                                {catalog.filter(c => c.activo).map(c => (
                                                    <option key={c.id} value={c.id}>{c.nombre_servicio}</option>
                                                ))}
                                            </select>
-                                       ) : (
+                                       </div>
+                                   )}
+                                   {inputMode === 'manual' && (
+                                       <div className="md:col-span-2">
                                            <input 
                                                 type="text"
                                                 className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                                                placeholder="Nombre del servicio o repuesto..."
+                                                placeholder="Nombre del servicio o labor manual..."
                                                 value={customServiceName}
                                                 onChange={(e) => setCustomServiceName(e.target.value)}
                                            />
-                                       )}
-                                   </div>
+                                       </div>
+                                   )}
+                                   {inputMode === 'inventory' && (
+                                       <>
+                                        <div className="md:col-span-1">
+                                            <select 
+                                                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                                    value={selectedProductId}
+                                                    onChange={(e) => {
+                                                        const id = e.target.value;
+                                                        setSelectedProductId(id);
+                                                        const prod = products.find(p => p.id === parseInt(id));
+                                                        if(prod) setServicePrice(prod.precio_venta_normal);
+                                                    }}
+                                            >
+                                                <option value="">Buscar en Inventario...</option>
+                                                {products.filter(p => p.activo && p.existencias > 0).map(p => (
+                                                    <option key={p.id} value={p.id}>{p.nombre} (Stock: {p.existencias})</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="md:col-span-1">
+                                            <input 
+                                                    type="number" 
+                                                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                                    placeholder="Cant."
+                                                    min="1"
+                                                    value={serviceQuantity}
+                                                    onChange={(e) => setServiceQuantity(e.target.value)}
+                                            />
+                                        </div>
+                                       </>
+                                   )}
+                                   
                                    <div>
                                        <input 
                                             type="number" 
                                             className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                                            placeholder="Precio ($)"
+                                            placeholder={inputMode === 'inventory' ? "Precio Venta Ud. ($)" : "Precio ($)"}
                                             value={servicePrice}
                                             onChange={(e) => setServicePrice(e.target.value)}
                                        />
                                    </div>
                                    <div>
-                                       <Button className="w-full bg-slate-900 text-white hover:bg-slate-800" onClick={handleAddService} disabled={addingService || (!isCustomService && !selectedServiceId) || (isCustomService && !customServiceName)}>
+                                       <Button className="w-full bg-slate-900 text-white hover:bg-slate-800" onClick={handleAddService} disabled={addingService || (inputMode==='catalog' && !selectedServiceId) || (inputMode==='manual' && !customServiceName) || (inputMode==='inventory' && !selectedProductId)}>
                                            {addingService ? '...' : 'Agregar'}
                                        </Button>
                                    </div>
                                </div>
-                               <div>
-                                   <input 
-                                        className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                                        placeholder="Observación (Opcional, ej: Marca del repuesto, número de parte...)"
-                                        value={serviceObservation}
-                                        onChange={(e) => setServiceObservation(e.target.value)}
-                                   />
-                               </div>
+                               {inputMode !== 'inventory' && (
+                                   <div>
+                                       <input 
+                                            className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                            placeholder="Observación técnica (Opcional)..."
+                                            value={serviceObservation}
+                                            onChange={(e) => setServiceObservation(e.target.value)}
+                                       />
+                                   </div>
+                               )}
                            </div>
 
                            {/* Services List */}
                            <div className="space-y-4">
                                <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center justify-between">
-                                   <span>Detalle de Costos</span>
-                                   <span className="text-sm font-normal text-slate-500">{appliedServices.length} items</span>
+                                   <span>Detalle de Cobro</span>
+                                   <span className="text-sm font-normal text-slate-500">{appliedServices.length + repuestos.length} items</span>
                                </h3>
                                
-                               {appliedServices.length === 0 ? (
+                               {(appliedServices.length === 0 && repuestos.length === 0) ? (
                                    <div className="text-center py-12 text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50">
                                        <p>No se han registrado servicios ni repuestos.</p>
                                    </div>
@@ -413,25 +526,56 @@ export default function TicketDetailPage({ ticketId, onClose }) {
                                        <table className="w-full text-sm">
                                            <thead className="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
                                                <tr>
-                                                   <th className="text-left p-4 font-bold text-slate-600 dark:text-slate-400">Servicio / Producto</th>
-                                                   <th className="text-left p-4 font-bold text-slate-600 dark:text-slate-400">Observación</th>
-                                                   <th className="text-right p-4 font-bold text-slate-600 dark:text-slate-400">Precio</th>
+                                                   <th className="text-left p-4 font-bold text-slate-600 dark:text-slate-400">Concepto</th>
+                                                   <th className="text-left p-4 font-bold text-slate-600 dark:text-slate-400">Detalles</th>
+                                                   <th className="text-right p-4 font-bold text-slate-600 dark:text-slate-400">Subtotal</th>
+                                                   <th className="text-right p-4 font-bold text-slate-600 dark:text-slate-400 w-16"></th>
                                                </tr>
                                            </thead>
                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                               
                                                {appliedServices.map((item) => (
-                                                   <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                                                       <td className="p-4 font-medium text-slate-900 dark:text-white">{item.nombre_servicio}</td>
+                                                   <tr key={`svc-${item.id}`} className="hover:bg-slate-50/50 transition-colors">
+                                                       <td className="p-4">
+                                                            <div className="font-medium text-slate-900 dark:text-white">{item.nombre_servicio}</div>
+                                                            <span className="text-[10px] uppercase font-bold text-slate-400">Mano de Obra</span>
+                                                       </td>
                                                        <td className="p-4 text-slate-500 italic">{item.observacion_tecnica || '-'}</td>
                                                        <td className="p-4 text-right font-mono font-medium text-slate-900 dark:text-white">${Number(item.precio_cobrado).toLocaleString()}</td>
+                                                       <td className="p-4 pb-3 pr-4 text-right"></td>
                                                    </tr>
                                                ))}
-                                               <tr className="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-200 dark:border-slate-800">
+
+                                               {repuestos.map((item) => (
+                                                   <tr key={`rep-${item.id}`} className="hover:bg-slate-50/50 transition-colors bg-indigo-50/30">
+                                                       <td className="p-4">
+                                                            <div className="flex items-center gap-2 font-medium text-slate-900 dark:text-white">
+                                                                <Box className="h-4 w-4 text-indigo-500"/>
+                                                                {item.nombre}
+                                                            </div>
+                                                            <span className="text-[10px] uppercase font-bold text-indigo-400">Repuesto (Retirado de Inventario)</span>
+                                                       </td>
+                                                       <td className="p-4 text-slate-500 text-xs">
+                                                            Cant: <strong>{item.cantidad}</strong> x ${Number(item.precio_cobrado).toLocaleString()}/ud <br/>
+                                                            <span className="font-mono text-[10px]">REF: {item.codigo_referencia}</span>
+                                                       </td>
+                                                       <td className="p-4 text-right font-mono font-medium text-slate-900 dark:text-white">
+                                                            ${(Number(item.precio_cobrado) * item.cantidad).toLocaleString()}
+                                                       </td>
+                                                       <td className="p-4 text-right">
+                                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteRepuesto(item.id)}>
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                       </td>
+                                                   </tr>
+                                               ))}
+
+                                               <tr className="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-200 dark:border-slate-800 w-full">
                                                    <td className="p-4 pt-6" colSpan="2">
                                                        <span className="font-black text-lg text-slate-900 dark:text-white uppercase tracking-wider">Total a Pagar</span>
                                                    </td>
-                                                   <td className="p-4 pt-6 text-right">
-                                                       <span className="font-black text-2xl text-indigo-600">${totalServices.toLocaleString()}</span>
+                                                   <td className="p-4 pt-6 text-right" colSpan="2">
+                                                       <span className="font-black text-2xl text-indigo-600 pr-5">${totalServices.toLocaleString()}</span>
                                                    </td>
                                                </tr>
                                            </tbody>
@@ -491,6 +635,24 @@ export default function TicketDetailPage({ ticketId, onClose }) {
                    fetchTicketById(ticketId); // Refresh ticket data to show new photos
                }}
            />
+       )}
+
+       {/* Payment modal when delivering */}
+       {pendingDelivery && (
+         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+           <div className="bg-white dark:bg-slate-900 rounded-xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
+             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Entregado y Pagado</h3>
+             <p className="text-sm text-slate-500 mb-6">¿Con qué método te pagaron los <strong className="text-indigo-600">${totalServices.toLocaleString()}</strong> de esta orden?</p>
+             <div className="grid grid-cols-2 gap-3 mb-6">
+                 <Button variant="outline" className="h-12 font-bold active:scale-95" onClick={() => handleStatusChange('Entregado', 'Efectivo')}>Efectivo</Button>
+                 <Button variant="outline" className="h-12 font-bold active:scale-95" onClick={() => handleStatusChange('Entregado', 'Transferencia')}>Transfer.</Button>
+                 <Button variant="outline" className="col-span-2 h-12 font-bold active:scale-95 text-slate-500" onClick={() => handleStatusChange('Entregado', 'Otros Bancos / Mixto')}>Otro / Mixto / Múltiple</Button>
+             </div>
+             <div className="flex justify-end">
+               <Button variant="ghost" onClick={() => setPendingDelivery(false)}>Cancelar</Button>
+             </div>
+           </div>
+         </div>
        )}
     </div>
   );

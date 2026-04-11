@@ -5,15 +5,15 @@ import { Input } from '../../../components/ui/input';
 import { useToast } from '../../../components/ui/toast';
 import { useClients } from '../../clients/hooks/useClients';
 import { useTechnicalServices } from '../hooks/useTechnicalServices';
-import { Search, Save, X, UserPlus } from 'lucide-react';
-
+import { Search, Save, X, UserPlus, Clipboard, CheckCircle, Upload, Printer } from 'lucide-react';
+import ClientForm from '../../clients/components/ClientForm';
 import PhotoUploadModal from './PhotoUploadModal';
-import { Clipboard, CheckCircle, Upload, Printer } from 'lucide-react';
+import { printTicketReceipt } from '../utils/printReceipt';
 
 export default function TicketForm({ onClose, onSuccess, isAdminService = false }) {
   const { register, handleSubmit, formState: { errors } } = useForm();
   const { createTicket, loading: loadingTicket } = useTechnicalServices();
-  const { clients, searchClients } = useClients();
+  const { searchClients, createClient } = useClients();
   const { toast } = useToast();
   
   const [clientSearch, setClientSearch] = useState('');
@@ -24,6 +24,7 @@ export default function TicketForm({ onClose, onSuccess, isAdminService = false 
   // Success State
   const [createdTicket, setCreatedTicket] = useState(null);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [showClientForm, setShowClientForm] = useState(false);
 
   // Client search logic
   useEffect(() => {
@@ -46,6 +47,17 @@ export default function TicketForm({ onClose, onSuccess, isAdminService = false 
       setSelectedClient(client);
       setClientSearch(`${client.nombres} ${client.apellidos}`);
       setClientResults([]);
+  };
+
+  const handleCreateClient = async (formData) => {
+      const result = await createClient(formData);
+      if (result.success) {
+          toast({ title: "Éxito", description: "Cliente creado exitosamente", variant: "success" });
+          setShowClientForm(false);
+          setClientSearch(formData.nombres); // Trigger a search for the newly created client
+      } else {
+          toast({ title: "Error", description: result.error || "Error al crear cliente", variant: "destructive" });
+      }
   };
 
   const onSubmit = async (data) => {
@@ -72,9 +84,14 @@ export default function TicketForm({ onClose, onSuccess, isAdminService = false 
 
       console.log("Submitting Ticket Data:", ticketData);
 
+      // Save initial price/advance to state so the Receipt can read it
+      const tempCostoLocal = data.costo_aproximado || 'Por diagnosticar';
+
       const result = await createTicket(ticketData);
       if (result.success) {
-          setCreatedTicket(result.data);
+          // Attach our local print info to the created ticket
+          const savedTicket = { ...result.data, costo_impresion_local: tempCostoLocal };
+          setCreatedTicket(savedTicket);
           toast({ title: "Ticket Creado", description: `Orden #${result.data.id} generada exitosamente.`, variant: "success" });
           onSuccess?.(); // Refresh background list
       } else {
@@ -117,6 +134,10 @@ export default function TicketForm({ onClose, onSuccess, isAdminService = false 
                )}
 
                <div className="grid gap-3">
+                   <Button onClick={() => printTicketReceipt(createdTicket)} className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold">
+                       <Printer className="h-4 w-4 mr-2" />
+                       Imprimir Recibo PDF (Cliente)
+                   </Button>
                    <Button onClick={() => setShowPhotoModal(true)} className="w-full bg-indigo-600 hover:bg-indigo-700">
                        <Upload className="h-4 w-4 mr-2" />
                        Subir Fotos del Equipo
@@ -231,7 +252,17 @@ export default function TicketForm({ onClose, onSuccess, isAdminService = false 
                                 {/* No results message */}
                                 {!isSearching && clientSearch.length > 2 && clientResults.length === 0 && (
                                     <div className="absolute z-10 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg mt-1 p-3 text-center text-sm text-slate-500">
-                                        No se encontraron clientes.
+                                        <p className="mb-3">No se encontraron clientes.</p>
+                                        <Button 
+                                            type="button" 
+                                            size="sm" 
+                                            variant="outline" 
+                                            className="w-full text-indigo-600 border-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                                            onClick={() => setShowClientForm(true)}
+                                        >
+                                            <UserPlus className="h-4 w-4 mr-2" />
+                                            Crear Nuevo Cliente
+                                        </Button>
                                     </div>
                                 )}
                             </div>
@@ -306,14 +337,19 @@ export default function TicketForm({ onClose, onSuccess, isAdminService = false 
                         </div>
                    </div>
 
-                   <div className="space-y-2">
-                       <label className="text-sm font-medium">Accesorios Incluidos</label>
-                       <Input {...register('cables_accesorios')} placeholder="Ej. Cargador, Funda..." />
-                   </div>
-
-                   <div className="space-y-2">
-                       <label className="text-sm font-medium">Contraseña / Patrón</label>
-                       <Input {...register('contrasena_sistema')} placeholder="Si aplica..." />
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <div className="space-y-2">
+                           <label className="text-sm font-medium">Accesorios Incluidos</label>
+                           <Input {...register('cables_accesorios')} placeholder="Ej. Cargador, Funda..." />
+                       </div>
+                       <div className="space-y-2">
+                           <label className="text-sm font-medium">Contraseña / Patrón</label>
+                           <Input {...register('contrasena_sistema')} placeholder="Si aplica..." />
+                       </div>
+                       <div className="space-y-2">
+                           <label className="text-sm font-medium text-emerald-700 dark:text-emerald-500 flex items-center gap-1">Costo / Cotización <Printer className="w-3 h-3"/></label>
+                           <Input {...register('costo_aproximado')} placeholder="Impreso en recibo (Opcional)..." />
+                       </div>
                    </div>
                    
                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
@@ -325,6 +361,12 @@ export default function TicketForm({ onClose, onSuccess, isAdminService = false 
                </form>
            </div>
        </div>
+
+       <ClientForm 
+          isOpen={showClientForm} 
+          onClose={() => setShowClientForm(false)} 
+          onSubmit={handleCreateClient} 
+       />
     </div>
   );
 }

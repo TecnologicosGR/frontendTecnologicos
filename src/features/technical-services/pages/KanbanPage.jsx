@@ -72,13 +72,19 @@ export default function KanbanPage() {
   }, [loadTickets]);
 
   const handleDrop = async (ticketId, newStatus) => {
+    // Prevent accidental delivery without payment check
+    if (newStatus === 'entregado') {
+        toast({ title: "Acción requerida", description: "Para finalizar, abre el detalle de la orden para registrar el pago y confirmar la entrega.", variant: "default" });
+        setSelectedTicketId(ticketId); // Abre el modal de detalle automáticamente
+        return;
+    }
+
     setUpdatingId(ticketId);
 
     const backendStatus = {
       'recibido': 'recibido',
       'en reparación': 'En Reparación',
       'terminado': 'Terminado',
-      'entregado': 'Entregado',
     }[newStatus] || newStatus;
 
     const result = await updateTicketStatus(ticketId, backendStatus, `Estado actualizado a ${backendStatus} desde tablero Kanban`);

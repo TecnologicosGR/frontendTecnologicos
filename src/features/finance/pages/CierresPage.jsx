@@ -112,11 +112,17 @@ function CloseDetailModal({ close, onClose }) {
 
         {/* Servicios cerrados */}
         {close.total_servicios_cerrados > 0 && (
-          <div className="px-5 pb-3">
+          <div className="px-5 pb-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex items-center gap-2 text-sm text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg px-3 py-2">
-              <Wrench className="h-4 w-4" />
-              <span>{close.total_servicios_cerrados} servicios técnicos entregados durante este turno</span>
+              <Wrench className="h-4 w-4 shrink-0" />
+              <span>{close.total_servicios_cerrados} servicios técnicos cobrados y entregados</span>
             </div>
+            {close.ingreso_servicios > 0 && (
+              <div className="flex items-center justify-between text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg px-3 py-2 font-bold">
+                <span>Ingreso por Servicios</span>
+                <span>{fmt(close.ingreso_servicios)}</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -227,9 +233,10 @@ export default function CierresPage() {
           <h2 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-widest">
             Vista previa — Turno {turno} · {preview.hora_inicio?.slice(11, 16)} – {preview.hora_fin?.slice(11, 16)}
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <KpiCard label="Recaudado"     value={fmt(preview.monto_cobrado)}     sub={`${preview.ventas_cobradas} ventas`}    Icon={DollarSign}   iconClass="text-green-600" />
-            <KpiCard label="Pendiente"     value={fmt(preview.monto_pendiente)}   sub={`${preview.ventas_pendientes} ventas`}  Icon={AlertCircle}  iconClass="text-orange-500" />
+          <div className="grid grid-cols-1 min-[450px]:grid-cols-2 md:grid-cols-5 gap-3">
+            <KpiCard label="Recaudado (Total)" value={fmt(preview.monto_cobrado)}     sub={`${preview.ventas_cobradas} ventas`}    Icon={DollarSign}   iconClass="text-green-600" />
+            <KpiCard label="Por Servicios" value={fmt(preview.ingresos_servicios)} sub="Incluido en total" Icon={Wrench}     iconClass="text-emerald-600" />
+            <KpiCard label="Pendiente"     value={fmt(preview.monto_pendiente)}   sub={`${preview.ventas_pendientes} tickets`}  Icon={AlertCircle}  iconClass="text-orange-500" />
             <KpiCard label="Efectivo"      value={fmt(preview.total_efectivo)}    Icon={Banknote}     iconClass="text-blue-600" />
             <KpiCard label="Transferencia" value={fmt(preview.total_transferencia)} Icon={CreditCard} iconClass="text-indigo-600" />
           </div>
@@ -315,7 +322,7 @@ export default function CierresPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                    {['Fecha', 'Turno', 'Recaudado', 'Ganancia', 'Efectivo', 'Transf.', '# Ventas', 'Clientes', 'Generado por', ''].map(h => (
+                    {['Fecha', 'Turno', 'Recaudado', 'Ganancia', 'Efectivo', 'Transf.', '# Ventas', '# Servs.', 'Ingresos Servs.', 'Generado por', ''].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -335,7 +342,8 @@ export default function CierresPage() {
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">{fmt(c.total_efectivo)}</td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">{fmt(c.total_transferencia)}</td>
                       <td className="px-4 py-3 text-center text-slate-700 dark:text-slate-300 font-semibold">{c.total_ventas_conteo}</td>
-                      <td className="px-4 py-3 text-center text-slate-700 dark:text-slate-300">{c.total_clientes_atendidos}</td>
+                      <td className="px-4 py-3 text-center text-indigo-600 dark:text-indigo-400 font-semibold bg-indigo-50/50 dark:bg-indigo-900/10 rounded-l-md">{c.total_servicios_cerrados}</td>
+                      <td className="px-4 py-3 font-bold text-emerald-600 whitespace-nowrap bg-emerald-50/50 dark:bg-emerald-900/10 rounded-r-md">{fmt(c.ingreso_servicios)}</td>
                       <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">{c.nombre_empleado || '—'}</td>
                       <td className="px-4 py-3">
                         <button

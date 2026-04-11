@@ -86,10 +86,10 @@ export function useTechnicalServices() {
     }
   };
 
-  const updateTicketStatus = async (id, status, note) => {
+  const updateTicketStatus = async (id, status, note, payment_method) => {
     setLoading(true);
     try {
-      const result = await technicalService.updateStatus(id, { status, note });
+      const result = await technicalService.updateStatus(id, { status, note, payment_method });
       // Update local state
       setTickets(prev => prev.map(t => t.id === id ? { ...t, estado_actual: status } : t));
       if (currentTicket && currentTicket.id === id) {
@@ -140,6 +140,39 @@ export function useTechnicalServices() {
     }
   };
 
+  const getRepuestos = async (ticketId) => {
+      try {
+          const result = await technicalService.getRepuestos(ticketId);
+          return { success: true, data: result };
+      } catch (err) {
+          return { success: false, error: err.detail };
+      }
+  };
+
+  const addRepuesto = async (ticketId, data) => {
+      setLoading(true);
+      try {
+          const result = await technicalService.addRepuesto(ticketId, data);
+          return { success: true, data: result };
+      } catch (err) {
+          return { success: false, error: err.detail };
+      } finally {
+          setLoading(false);
+      }
+  };
+
+  const deleteRepuesto = async (repuestoId) => {
+      setLoading(true);
+      try {
+          const result = await technicalService.deleteRepuesto(repuestoId);
+          return { success: true, data: result };
+      } catch (err) {
+          return { success: false, error: err.detail };
+      } finally {
+          setLoading(false);
+      }
+  };
+
   return {
     tickets,
     currentTicket,
@@ -152,6 +185,9 @@ export function useTechnicalServices() {
     updateTicketStatus,
     addAppliedService,
     updateTicket,
-    uploadEvidence
+    uploadEvidence,
+    getRepuestos,
+    addRepuesto,
+    deleteRepuesto
   };
 }
