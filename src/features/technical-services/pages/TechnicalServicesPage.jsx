@@ -3,14 +3,14 @@ import { useTechnicalServices } from '../hooks/useTechnicalServices';
 import { useToast } from '../../../components/ui/toast';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
-import { Search, Plus, Filter, Wrench, Clock, CheckCircle, AlertCircle, Calendar, FileText } from 'lucide-react';
+import { Search, Plus, Filter, Wrench, Clock, CheckCircle, AlertCircle, Calendar, FileText, Trash2 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import TicketForm from '../components/TicketForm';
 import TicketDetailPage from '../components/TicketDetailPage';
 import { printTicketReceipt } from '../utils/printReceipt';
 
 export default function TechnicalServicesPage() {
-  const { tickets, loading, fetchTickets } = useTechnicalServices();
+  const { tickets, loading, fetchTickets, deleteTicket } = useTechnicalServices();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -21,10 +21,21 @@ export default function TechnicalServicesPage() {
   }, [fetchTickets]);
 
   const filteredTickets = tickets.filter(t => 
-      t.cliente_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.nombre_cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       t.dispositivo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(t.id).includes(searchTerm)
   );
+
+  const handleDelete = async (id) => {
+      if (window.confirm("¿Estás seguro de eliminar permanentemente esta orden de servicio? Esta acción no se puede deshacer.")) {
+          const res = await deleteTicket(id);
+          if (res.success) {
+              toast({ title: "Orden eliminada", variant: "success" });
+          } else {
+              toast({ title: "Error al eliminar", description: res.error, variant: "destructive" });
+          }
+      }
+  };
 
   const getStatusColor = (status) => {
       switch(status?.toLowerCase()) {
@@ -95,11 +106,11 @@ export default function TechnicalServicesPage() {
                        </div>
                        <div>
                             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-                                <span className="text-slate-400">Cliente:</span> {ticket.cliente_nombre || 'N/A'}
+                                <span className="text-slate-400">Cliente:</span> {ticket.nombre_cliente || 'N/A'}
                             </div>
                             <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                                 <Calendar className="h-3 w-3" />
-                                <span>Ingreso: {new Date(ticket.created_at).toLocaleDateString()}</span>
+                                <span>Ingreso: {ticket.fecha_ingreso ? new Date(ticket.fecha_ingreso).toLocaleDateString() : 'N/A'}</span>
                             </div>
                        </div>
                    </div>
@@ -108,16 +119,25 @@ export default function TechnicalServicesPage() {
                        <Button variant="outline" size="sm" onClick={() => setSelectedTicketId(ticket.id)}>
                            Ver Detalles
                        </Button>
-                       <Button 
-                         variant="ghost" 
-                         size="sm" 
-                         className="gap-1 text-primary"
-                         onClick={() => printTicketReceipt(ticket, 'Consultar detalles')}
-                         title="Imprimir ticket PDF"
-                       >
-                         <FileText className="h-4 w-4" /> Ticket
-                       </Button>
-                   </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="gap-1 text-primary"
+                          onClick={() => printTicketReceipt(ticket, 'Consultar detalles')}
+                          title="Imprimir ticket PDF"
+                        >
+                          <FileText className="h-4 w-4" /> Ticket
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="gap-1 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                          onClick={() => handleDelete(ticket.id)}
+                          title="Eliminar Orden"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
                </div>
            ))}
        </div>

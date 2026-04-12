@@ -136,5 +136,14 @@ export const technicalService = {
       } catch (error) {
           throw error.response?.data || { detail: 'Error al eliminar repuesto' };
       }
+  },
+
+  delete: async (id) => {
+      try {
+          const response = await axios.delete(`${BASE_URL}/${id}`);
+          return response.data;
+      } catch (error) {
+          throw error.response?.data || { detail: 'Error al eliminar el ticket' };
+      }
   }
 };

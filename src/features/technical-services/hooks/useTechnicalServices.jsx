@@ -173,6 +173,19 @@ export function useTechnicalServices() {
       }
   };
 
+  const deleteTicket = async (id) => {
+      setLoading(true);
+      try {
+          const result = await technicalService.delete(id);
+          setTickets(prev => prev.filter(t => t.id !== id));
+          return { success: true, data: result };
+      } catch (err) {
+          return { success: false, error: err.detail };
+      } finally {
+          setLoading(false);
+      }
+  };
+
   return {
     tickets,
     currentTicket,
@@ -188,6 +201,7 @@ export function useTechnicalServices() {
     uploadEvidence,
     getRepuestos,
     addRepuesto,
-    deleteRepuesto
+    deleteRepuesto,
+    deleteTicket
   };
 }

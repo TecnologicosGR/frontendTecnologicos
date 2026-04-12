@@ -13,10 +13,7 @@ export async function printTicketReceipt(ticket, customPrice = 'Por diagnosticar
     console.error("No se pudo cargar la info de la empresa para el ticket", error);
   }
 
-  const clientName = ticket.cliente_nombre || ticket.nombres || 'Cliente Registrado';
-  const pickupDate = ticket.fecha_estimada_salida 
-    ? new Date(ticket.fecha_estimada_salida).toLocaleDateString() 
-    : 'Por confirmar';
+  const clientName = ticket.nombre_cliente || ticket.nombres || 'Cliente';
 
   const htmlContent = `
     <html>
@@ -71,13 +68,8 @@ export async function printTicketReceipt(ticket, customPrice = 'Por diagnosticar
           <p class="paragraph"><strong>Estado físico:</strong> ${ticket.estado_fisico_entrada || 'No especificado'}</p>
           <p class="paragraph"><strong>Accesorios:</strong> ${ticket.cables_accesorios || 'Ninguno'}</p>
           
-          <div class="row">
-            <span class="label">Cotización/Costo Inicial:</span>
-            <span class="value">${ticket.costo_impresion_local || customPrice}</span>
-          </div>
           <div class="row" style="margin-top: 5px; border-bottom: 1px dotted #ccc; padding-bottom: 10px;">
-            <span class="label">Devolución Estimada:</span>
-            <span class="value">${pickupDate}</span>
+             <!-- Campos de costo eliminados -->
           </div>
 
           <div class="legal">
