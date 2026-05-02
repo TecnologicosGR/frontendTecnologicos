@@ -21,6 +21,9 @@ export default function TicketDetailPage({ ticketId, onClose }) {
   const [repuestos, setRepuestos] = useState([]);
   const [loadingServices, setLoadingServices] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [inventorySearch, setInventorySearch] = useState('');
+  const [showInventoryDropdown, setShowInventoryDropdown] = useState(false);
   
   // Diagnosis state
   const [diagnosis, setDiagnosis] = useState('');
@@ -118,6 +121,7 @@ export default function TicketDetailPage({ ticketId, onClose }) {
               setSelectedProductId('');
               setServicePrice('');
               setServiceQuantity(1);
+              setInventorySearch('');
               fetchRepuestos();
           } else {
               toast({ title: "Error", description: result.error, variant: "destructive" });
@@ -167,7 +171,14 @@ export default function TicketDetailPage({ ticketId, onClose }) {
       }
   };
 
-  if (loading || !currentTicket) return <div className="p-10 text-center">Cargando...</div>;
+  if (loading || !currentTicket) return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-2xl flex flex-col items-center justify-center gap-4">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div>
+            <p className="text-slate-600 dark:text-slate-400 font-medium">Cargando detalles de la orden...</p>
+        </div>
+    </div>
+  );
 
   const totalServices = appliedServices.reduce((sum, s) => sum + Number(s.precio_cobrado), 0) + 
                         repuestos.reduce((sum, r) => sum + (Number(r.precio_cobrado) * r.cantidad), 0);
@@ -453,22 +464,54 @@ export default function TicketDetailPage({ ticketId, onClose }) {
                                    )}
                                    {inputMode === 'inventory' && (
                                        <>
-                                        <div className="md:col-span-1">
-                                            <select 
-                                                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                                                    value={selectedProductId}
-                                                    onChange={(e) => {
-                                                        const id = e.target.value;
-                                                        setSelectedProductId(id);
-                                                        const prod = products.find(p => p.id === parseInt(id));
-                                                        if(prod) setServicePrice(prod.precio_venta_normal);
-                                                    }}
-                                            >
-                                                <option value="">Buscar en Inventario...</option>
-                                                {products.filter(p => p.activo && p.existencias > 0).map(p => (
-                                                    <option key={p.id} value={p.id}>{p.nombre} (Stock: {p.existencias})</option>
-                                                ))}
-                                            </select>
+                                        <div className="md:col-span-1 relative">
+                                            <input 
+                                                type="text"
+                                                className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                                placeholder="Buscar repuesto (nombre o REF)..."
+                                                value={inventorySearch}
+                                                onChange={(e) => {
+                                                    setInventorySearch(e.target.value);
+                                                    setShowInventoryDropdown(true);
+                                                    setSelectedProductId('');
+                                                    setServicePrice('');
+                                                }}
+                                                onFocus={() => setShowInventoryDropdown(true)}
+                                                onBlur={() => setTimeout(() => setShowInventoryDropdown(false), 200)}
+                                            />
+                                            {showInventoryDropdown && (
+                                                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                                    {products
+                                                        .filter(p => p.activo && p.existencias > 0)
+                                                        .filter(p => p.nombre.toLowerCase().includes(inventorySearch.toLowerCase()) || (p.codigo_referencia && p.codigo_referencia.toLowerCase().includes(inventorySearch.toLowerCase())))
+                                                        .map(p => (
+                                                        <div 
+                                                            key={p.id} 
+                                                            className="px-3 py-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 cursor-pointer text-sm flex justify-between items-center border-b border-slate-100 dark:border-slate-800 last:border-0"
+                                                            onClick={() => {
+                                                                setSelectedProductId(p.id);
+                                                                setServicePrice(p.precio_venta_normal);
+                                                                setInventorySearch(`${p.codigo_referencia ? p.codigo_referencia + ' - ' : ''}${p.nombre}`);
+                                                                setShowInventoryDropdown(false);
+                                                            }}
+                                                        >
+                                                            <div>
+                                                                <div className="font-medium text-slate-900 dark:text-slate-100">{p.nombre}</div>
+                                                                <div className="text-[10px] font-mono text-slate-500">{p.codigo_referencia || 'S/C'}</div>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <div className="font-bold text-indigo-600 dark:text-indigo-400">Stock: {p.existencias}</div>
+                                                                <div className="text-[10px] text-slate-500">${Number(p.precio_venta_normal).toLocaleString()}</div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    {products.filter(p => p.activo && p.existencias > 0 && (p.nombre.toLowerCase().includes(inventorySearch.toLowerCase()) || (p.codigo_referencia && p.codigo_referencia.toLowerCase().includes(inventorySearch.toLowerCase())))).length === 0 && (
+                                                        <div className="px-3 py-4 text-sm text-center text-slate-500">
+                                                            No hay productos disponibles.
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="md:col-span-1">
                                             <input 
@@ -613,7 +656,7 @@ export default function TicketDetailPage({ ticketId, onClose }) {
                                         <div key={idx} className="group relative aspect-square bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all cursor-pointer">
                                             <img src={url} alt={`Evidencia ${idx}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-end p-4 opacity-0 group-hover:opacity-100">
-                                                <Button size="sm" variant="secondary" className="w-full text-xs bg-white/90 backdrop-blur" onClick={() => window.open(url, '_blank')}>
+                                                <Button size="sm" variant="secondary" className="w-full text-xs bg-white/90 backdrop-blur" onClick={() => setSelectedImage(url)}>
                                                     Ver Original
                                                 </Button>
                                             </div>
@@ -653,6 +696,29 @@ export default function TicketDetailPage({ ticketId, onClose }) {
              </div>
            </div>
          </div>
+       )}
+
+       {/* Full screen image modal */}
+       {selectedImage && (
+           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4 animate-in fade-in duration-200" onClick={() => setSelectedImage(null)}>
+               <Button 
+                   variant="ghost" 
+                   size="icon" 
+                   className="absolute top-4 right-4 text-white hover:bg-white/20 h-10 w-10 z-[80]"
+                   onClick={(e) => {
+                       e.stopPropagation();
+                       setSelectedImage(null);
+                   }}
+               >
+                   <X className="h-6 w-6" />
+               </Button>
+               <img 
+                   src={selectedImage} 
+                   alt="Evidencia detallada" 
+                   className="max-w-full max-h-[95vh] object-contain cursor-default" 
+                   onClick={(e) => e.stopPropagation()}
+               />
+           </div>
        )}
     </div>
   );

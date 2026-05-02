@@ -249,11 +249,25 @@ function SaleDetailModal({ saleId, onClose }) {
                 {saving && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />} Guardar observaciones
               </Button>
             </div>
-            {currentSale.url_factura_pdf && (
-              <a href={currentSale.url_factura_pdf} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-primary text-sm hover:underline">
-                <FileText className="h-4 w-4" /> Ver factura PDF
-              </a>
-            )}
+            <div className="pt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 w-full justify-start text-primary border-primary/20 hover:bg-primary/5"
+                onClick={async () => {
+                  try {
+                    toast({ title: 'Generando factura...', description: 'Por favor espera un momento.', duration: 2000 });
+                    const blob = await salesService.downloadReceipt(saleId);
+                    const fileUrl = window.URL.createObjectURL(blob);
+                    window.open(fileUrl, '_blank');
+                  } catch (e) {
+                    toast({ title: 'Error', description: 'No se pudo generar el documento PDF', variant: 'destructive' });
+                  }
+                }}
+              >
+                <FileText className="h-4 w-4" /> Generar y Ver Recibo PDF
+              </Button>
+            </div>
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
               <Button variant="destructive" size="sm" onClick={handleCancel} disabled={cancelling} className="gap-2">
                 {cancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}

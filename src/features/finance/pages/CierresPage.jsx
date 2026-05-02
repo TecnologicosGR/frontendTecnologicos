@@ -13,17 +13,7 @@ const fmt = (n) =>
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const fmtTime = (d) => d ? new Date(d).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }) : '—';
 
-const TURNS = [
-  { value: 'DIURNO',   label: 'Diurno',   hours: '08:00 – 13:00', Icon: Sun,  color: 'text-amber-500',  ring: 'ring-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30' },
-  { value: 'NOCTURNO', label: 'Nocturno', hours: '14:00 – 19:00', Icon: Moon, color: 'text-indigo-500', ring: 'ring-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-950/30' },
-  { value: 'COMPLETO', label: 'Completo', hours: '08:00 – 19:00', Icon: CalendarDays, color: 'text-slate-600', ring: 'ring-slate-400', bg: 'bg-slate-50 dark:bg-slate-900' },
-];
 
-const TURN_BADGE = {
-  DIURNO:   'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-  NOCTURNO: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
-  COMPLETO: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-};
 
 // ── KPI Card ─────────────────────────────────────────────────────────────────
 function KpiCard({ label, value, sub, Icon, iconClass }) {
@@ -59,7 +49,7 @@ function CloseDetailModal({ close, onClose }) {
               Detalle del Cierre #{close.id}
             </h2>
             <p className="text-sm text-slate-500 mt-0.5">
-              {fmtDate(close.fecha_cierre)} · <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold ${TURN_BADGE[close.turno]}`}>{close.turno}</span>
+              {fmtDate(close.fecha_cierre)} · <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300`}>Día Completo</span>
               &nbsp;· {fmtTime(close.hora_inicio)} – {fmtTime(close.hora_fin)}
             </p>
           </div>
@@ -152,7 +142,6 @@ export default function CierresPage() {
   const today = new Date().toISOString().split('T')[0];
 
   // Form state
-  const [turno,       setTurno]      = useState('DIURNO');
   const [fechaCierre, setFechaCierre]= useState(today);
   const [notas,       setNotas]      = useState('');
   const [generating,  setGenerating] = useState(false);
@@ -160,21 +149,20 @@ export default function CierresPage() {
   // Filter state
   const [filtFechaI, setFiltFechaI] = useState('');
   const [filtFechaF, setFiltFechaF] = useState('');
-  const [filtTurno,  setFiltTurno]  = useState('');
 
-  // Load preview when turno changes
-  useEffect(() => { fetchPreview(turno); }, [turno, fetchPreview]);
+  // Load preview
+  useEffect(() => { fetchPreview("COMPLETO"); }, [fetchPreview]);
 
   // Load cierres on mount
   useEffect(() => { fetchCierres(); }, [fetchCierres]);
 
   const handleGenerate = async () => {
     setGenerating(true);
-    const result = await generateClose({ fecha_cierre: fechaCierre, turno, notas });
+    const result = await generateClose({ fecha_cierre: fechaCierre, turno: "COMPLETO", notas });
     if (result.success) {
       setNotas('');
-      fetchCierres({ fecha_inicio: filtFechaI || undefined, fecha_fin: filtFechaF || undefined, turno: filtTurno || undefined });
-      fetchPreview(turno);
+      fetchCierres({ fecha_inicio: filtFechaI || undefined, fecha_fin: filtFechaF || undefined });
+      fetchPreview("COMPLETO");
     }
     setGenerating(false);
   };
@@ -183,11 +171,8 @@ export default function CierresPage() {
     fetchCierres({
       fecha_inicio: filtFechaI || undefined,
       fecha_fin:    filtFechaF || undefined,
-      turno:        filtTurno  || undefined,
     });
   };
-
-  const activeTurn = TURNS.find(t => t.value === turno);
 
   return (
     <main className="flex flex-col gap-6 p-6 min-h-screen bg-slate-50/50 dark:bg-slate-950/50">
@@ -199,39 +184,18 @@ export default function CierresPage() {
           <p className="text-slate-500 dark:text-slate-400 mt-1">Registra y consulta los cierres por turno.</p>
         </div>
         <button
-          onClick={() => { fetchPreview(turno); fetchCierres(); }}
+          onClick={() => { fetchPreview("COMPLETO"); fetchCierres(); }}
           className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
         >
           <RotateCcw className="h-4 w-4" /> Actualizar
         </button>
       </div>
 
-      {/* ── Turno selector ──────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {TURNS.map(t => (
-          <button
-            key={t.value}
-            onClick={() => setTurno(t.value)}
-            className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
-              turno === t.value
-                ? `border-current ${t.color} ${t.bg} shadow-md`
-                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:border-slate-300'
-            }`}
-          >
-            <t.Icon className={`h-6 w-6 shrink-0 ${turno === t.value ? t.color : 'text-slate-400'}`} />
-            <div>
-              <p className={`font-bold text-sm ${turno === t.value ? t.color : 'text-slate-700 dark:text-slate-300'}`}>{t.label}</p>
-              <p className="text-xs text-slate-400">{t.hours}</p>
-            </div>
-          </button>
-        ))}
-      </div>
-
       {/* ── Live KPIs (preview) ─────────────────────────────────────────────── */}
       {preview && (
         <div>
           <h2 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-widest">
-            Vista previa — Turno {turno} · {preview.hora_inicio?.slice(11, 16)} – {preview.hora_fin?.slice(11, 16)}
+            Vista previa del Cierre de Hoy · {preview.hora_inicio?.slice(11, 16)} – {preview.hora_fin?.slice(11, 16)}
           </h2>
           <div className="grid grid-cols-1 min-[450px]:grid-cols-2 md:grid-cols-5 gap-3">
             <KpiCard label="Recaudado (Total)" value={fmt(preview.monto_cobrado)}     sub={`${preview.ventas_cobradas} ventas`}    Icon={DollarSign}   iconClass="text-green-600" />
@@ -244,10 +208,10 @@ export default function CierresPage() {
       )}
 
       {/* ── Generate close form ─────────────────────────────────────────────── */}
-      <div className={`rounded-xl border-2 p-5 ${activeTurn?.bg} ${turno === 'DIURNO' ? 'border-amber-200 dark:border-amber-800' : turno === 'NOCTURNO' ? 'border-indigo-200 dark:border-indigo-800' : 'border-slate-200 dark:border-slate-700'}`}>
+      <div className={`rounded-xl border-2 p-5 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700`}>
         <h2 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-          <activeTurn.Icon className={`h-5 w-5 ${activeTurn.color}`} />
-          Generar Cierre — Turno {turno}
+          <CalendarDays className={`h-5 w-5 text-slate-600 dark:text-slate-400`} />
+          Generar Cierre de Caja
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
@@ -274,14 +238,10 @@ export default function CierresPage() {
         <button
           onClick={handleGenerate}
           disabled={generating || loading}
-          className={`mt-4 flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed ${
-            turno === 'DIURNO' ? 'bg-amber-500 hover:bg-amber-600' :
-            turno === 'NOCTURNO' ? 'bg-indigo-600 hover:bg-indigo-700' :
-            'bg-slate-700 hover:bg-slate-800'
-          }`}
+          className={`mt-4 flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600`}
         >
           {generating ? <RotateCcw className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-          {generating ? 'Generando...' : `Cerrar Turno ${turno}`}
+          {generating ? 'Generando...' : `Cerrar Día`}
         </button>
       </div>
 
@@ -295,13 +255,6 @@ export default function CierresPage() {
             <span className="text-slate-400 text-xs">→</span>
             <input type="date" value={filtFechaF} onChange={e => setFiltFechaF(e.target.value)}
               className="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary" />
-            <select value={filtTurno} onChange={e => setFiltTurno(e.target.value)}
-              className="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="">Todos los turnos</option>
-              <option value="DIURNO">Diurno</option>
-              <option value="NOCTURNO">Nocturno</option>
-              <option value="COMPLETO">Completo</option>
-            </select>
             <button onClick={handleFilter}
               className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity">
               Filtrar
@@ -322,7 +275,7 @@ export default function CierresPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                    {['Fecha', 'Turno', 'Recaudado', 'Ganancia', 'Efectivo', 'Transf.', '# Ventas', '# Servs.', 'Ingresos Servs.', 'Generado por', ''].map(h => (
+                    {['Fecha', 'Recaudado', 'Ganancia', 'Efectivo', 'Transf.', '# Ventas', '# Servs.', 'Ingresos Servs.', 'Generado por', ''].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -331,12 +284,6 @@ export default function CierresPage() {
                   {cierres.map(c => (
                     <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                       <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{fmtDate(c.fecha_cierre)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${TURN_BADGE[c.turno] || TURN_BADGE.COMPLETO}`}>
-                          {c.turno === 'DIURNO' ? <Sun className="h-3 w-3" /> : c.turno === 'NOCTURNO' ? <Moon className="h-3 w-3" /> : <CalendarDays className="h-3 w-3" />}
-                          {c.turno}
-                        </span>
-                      </td>
                       <td className="px-4 py-3 font-bold text-green-600 whitespace-nowrap">{fmt(c.total_ventas)}</td>
                       <td className="px-4 py-3 text-emerald-600 font-semibold whitespace-nowrap">{fmt(c.total_ganancias)}</td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">{fmt(c.total_efectivo)}</td>

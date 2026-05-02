@@ -55,6 +55,15 @@ export const salesService = {
     }
   },
 
+  downloadReceipt: async (id) => {
+    try {
+      const res = await axios.get(`${BASE}/${id}/receipt`, { responseType: 'blob' });
+      return res.data;
+    } catch (err) {
+      throw { detail: 'Error descargando recibo' };
+    }
+  },
+
   updateSale: async (id, data) => {
     try {
       const res = await axios.patch(`${BASE}/${id}`, data);
