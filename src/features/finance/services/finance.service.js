@@ -4,8 +4,8 @@ const BASE = '/finance';
 
 export const financeService = {
   // Vista previa en tiempo real de un turno (sin guardar)
-  preview: async (turno = 'COMPLETO') => {
-    const { data } = await api.get(`${BASE}/preview`, { params: { turno } });
+  preview: async (fecha, turno = 'COMPLETO') => {
+    const { data } = await api.get(`${BASE}/preview`, { params: { fecha, turno } });
     return data;
   },
 

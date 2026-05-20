@@ -9,10 +9,10 @@ export function useFinance() {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading]   = useState(false);
 
-  const fetchPreview = useCallback(async (turno = 'COMPLETO') => {
+  const fetchPreview = useCallback(async (fecha, turno = 'COMPLETO') => {
     setLoading(true);
     try {
-      const data = await financeService.preview(turno);
+      const data = await financeService.preview(fecha, turno);
       setPreview(data);
     } catch (e) {
       toast({ title: 'Error', description: e.detail || 'No se pudo cargar la preview', variant: 'destructive' });
