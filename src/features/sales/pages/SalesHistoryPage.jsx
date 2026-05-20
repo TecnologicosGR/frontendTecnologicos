@@ -48,11 +48,11 @@ function getPreset(key) {
   const last30 = new Date(today); last30.setDate(today.getDate() - 29);
 
   const map = {
-    hoy:    { desde: today,      hasta: nextDay(today),      label: 'Hoy' },
-    ayer:   { desde: yesterday,  hasta: nextDay(yesterday),  label: 'Ayer' },
-    semana: { desde: weekStart,  hasta: nextDay(today),      label: 'Esta semana' },
-    mes:    { desde: monthStart, hasta: nextDay(today),      label: 'Este mes' },
-    last30: { desde: last30,     hasta: nextDay(today),      label: 'Últimos 30 días' },
+    hoy:    { desde: today,      hasta: today,               label: 'Hoy' },
+    ayer:   { desde: yesterday,  hasta: yesterday,           label: 'Ayer' },
+    semana: { desde: weekStart,  hasta: today,               label: 'Esta semana' },
+    mes:    { desde: monthStart, hasta: today,               label: 'Este mes' },
+    last30: { desde: last30,     hasta: today,               label: 'Últimos 30 días' },
     todo:   { desde: null,       hasta: null,                label: 'Todos' },
   };
   return map[key] || map.hoy;
@@ -291,8 +291,8 @@ export default function SalesHistoryPage() {
   const [search, setSearch] = useState('');
   const [metodo, setMetodo] = useState('');
   const [preset, setPreset]   = useState('hoy');
-  const [desdeRaw, setDesdeRaw] = useState(toISO(new Date()));
-  const [hastaRaw, setHastaRaw] = useState(toISO(new Date()));
+  const [desdeRaw, setDesdeRaw] = useState(toLocalDate(new Date()));
+  const [hastaRaw, setHastaRaw] = useState(toLocalDate(new Date()));
   const [useCustom, setUseCustom] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [page, setPage] = useState(0);
@@ -304,7 +304,7 @@ export default function SalesHistoryPage() {
   // Derived dates
   const activeDates = useCustom
     ? { desde: desdeRaw || undefined, hasta: hastaRaw || undefined }
-    : (() => { const p = getPreset(preset); return { desde: toISO(p.desde) || undefined, hasta: toISO(p.hasta) || undefined }; })();
+    : (() => { const p = getPreset(preset); return { desde: toLocalDate(p.desde) || undefined, hasta: toLocalDate(p.hasta) || undefined }; })();
 
   const loadSummary = useCallback(async (desde, hasta) => {
     setSummaryLoading(true);
