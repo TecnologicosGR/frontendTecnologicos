@@ -1,0 +1,33 @@
+name: Deploy Frontend to VPS
+
+on:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  deploy:
+    name: Build & Deploy Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 2.25.73.106
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            echo "--- Pulling latest code ---"
+            cd ~/tecnologicos/frontend
+            git pull origin $(git rev-parse --abbrev-ref HEAD)
+
+            echo "--- Rebuilding and restarting Docker container ---"
+            docker compose up --build -d
+
+            echo "--- Deploy complete! ---"
+            docker ps | grep frontend

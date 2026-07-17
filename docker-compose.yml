@@ -1,0 +1,11 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: https://tecnologicosgr.tech/api/v1
+    container_name: frontend-app
+    restart: unless-stopped
+    ports:
+      - "3000:80"

@@ -1,0 +1,36 @@
+# Dependencias
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output (lo genera el stage de build dentro de Docker)
+dist
+dist-ssr
+
+# Control de versiones
+.git
+.gitignore
+
+# Variables de entorno locales (no incluir en la imagen)
+.env
+.env.local
+.env.*.local
+
+# Editores
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
