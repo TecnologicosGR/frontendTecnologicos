@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import SEO from '../../components/SEO';
 import { usePublicCatalog } from '../../features/products/hooks/usePublicCatalog';
 import { useCart } from '../../features/sales/hooks/useCart';
 import PublicNavbar from './components/PublicNavbar';
@@ -33,6 +34,11 @@ export default function CatalogPage() {
 
   return (
     <div className="min-h-screen bg-[#F9F9F9] dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-100 font-sans selection:bg-primary/30 flex flex-col pt-20">
+      <SEO 
+        title="Catálogo de Productos" 
+        description="Explora nuestro catálogo de tecnología en Valledupar. Celulares, accesorios, repuestos y componentes de computadores de las mejores marcas con garantía oficial."
+        keywords="comprar celulares valledupar, accesorios tecnologicos valledupar, cargadores iphone valledupar, repuestos celulares valledupar, tecnologicos tienda"
+      />
       <PublicNavbar />
       
       {/* Search & Header Bar */}

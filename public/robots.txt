@@ -1,0 +1,12 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Allow: /catalogo
+Allow: /producto/
+Disallow: /admin/
+Disallow: /checkout
+Disallow: /mi-cuenta
+Disallow: /staff-login
+Disallow: /auth/
+
+Sitemap: https://www.tecnologicosgr.tech/sitemap.xml

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import SEO from '../../components/SEO';
 import { usePublicCatalog } from '../../features/products/hooks/usePublicCatalog';
 import { useCart } from '../../features/sales/hooks/useCart';
 import PublicNavbar from './components/PublicNavbar';
@@ -67,6 +68,7 @@ export default function ProductDetailPage() {
   if (notFound || !product) {
     return (
       <div className="min-h-screen bg-[#F9F9F9] dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-100 pt-24 flex flex-col">
+        <SEO title="Producto no encontrado" description="El producto que buscas no se encuentra disponible en nuestro catálogo de Valledupar." />
         <PublicNavbar />
         <main className="flex-1 container mx-auto px-6 py-8 flex items-center justify-center">
           <div className="text-center max-w-md bg-white dark:bg-[#111111] rounded-3xl border border-slate-200 dark:border-slate-800 p-8">
@@ -92,6 +94,11 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#F9F9F9] dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-100 font-sans selection:bg-primary/30 pt-24 flex flex-col">
+      <SEO 
+        title={product.nombre} 
+        description={`Comprar ${product.nombre} en Valledupar. ${product.descripcion ? product.descripcion.slice(0, 150) + '...' : 'Encuentra las mejores ofertas y accesorios con garantía oficial en Tecno-logicos GR.'}`}
+        keywords={`${product.nombre}, ${product.nombre} valledupar, comprar ${product.nombre}, tecnologicos valledupar`}
+      />
       <PublicNavbar />
 
       <main className="flex-1 container mx-auto px-6 py-8">
