@@ -4,8 +4,8 @@ import { MessageCircle } from 'lucide-react';
 
 export default function WhatsAppFAB() {
   const handleWhatsAppClick = () => {
-    // Replace with actual business WhatsApp number
-    const wppLink = "https://wa.me/573001234567?text=Hola,%20me%20gustar%C3%ADa%20cotizar%20un%20servicio%20o%20producto.";
+    // Actual business WhatsApp number
+    const wppLink = "https://wa.me/573003436635?text=Hola,%20me%20gustar%C3%ADa%20cotizar%20un%20servicio%20o%20producto.";
     window.open(wppLink, '_blank');
   };
 

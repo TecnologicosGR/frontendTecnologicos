@@ -166,12 +166,6 @@ export default function CatalogPage() {
                             LOGO
                           </div>
                       )}
-                      
-                      {product.existencias <= product.stock_minimo && (
-                        <span className="absolute top-2 left-2 px-2 py-1 bg-red-500 text-white text-[10px] font-bold rounded shadow-lg">
-                          ¡Últimas {product.existencias}!
-                        </span>
-                      )}
                     </div>
 
                     <div className="flex-1 flex flex-col justify-between">

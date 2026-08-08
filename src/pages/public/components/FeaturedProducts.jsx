@@ -127,15 +127,6 @@ export default function FeaturedProducts() {
                       <span className="text-slate-400 font-bold text-2xl opacity-20">LOGO</span>
                     </motion.div>
                  )}
-
-                 {/* Badges */}
-                 <div className="absolute top-3 left-3 flex gap-2">
-                    {product.existencias <= product.stock_minimo && (
-                      <span className="px-2 py-1 bg-red-500/90 backdrop-blur text-white text-[10px] font-bold rounded uppercase tracking-wider">
-                        Pocas unid.
-                      </span>
-                    )}
-                 </div>
               </div>
 
               {/* Info */}
