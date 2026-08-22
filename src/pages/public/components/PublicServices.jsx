@@ -126,7 +126,7 @@ export default function PublicServices() {
           </div>
 
           <div className="mt-16 text-center relative z-10">
-            <a href="https://wa.me/XXXXXXXXXX" target="_blank" rel="noreferrer">
+            <a href="https://wa.me/573003436635?text=Hola,%20quisiera%20cotizar%20un%20servicio%20t%C3%A9cnico." target="_blank" rel="noreferrer">
              <Button size="lg" className="h-14 px-10 text-lg font-bold rounded-2xl bg-primary hover:bg-primary/90 text-black shadow-[0_0_30px_hsl(var(--primary)/0.3)] border-none">
                Cotizar Ahora <ChevronRight className="ml-2" />
              </Button>

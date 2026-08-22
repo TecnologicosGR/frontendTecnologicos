@@ -27,8 +27,10 @@ export default function FeaturedProducts() {
   const { products, loadingProducts: loading } = usePublicCatalog();
   const { addToCart } = useCart();
   
-  // Just grab the first 4 for now as featured
-  const featured = products.slice(0, 4);
+  // Grab the first 4 active products with stock > 0
+  const featured = products
+    .filter(p => p.activo && (p.existencias || 0) > 0)
+    .slice(0, 4);
 
   const handleAdd = (e, id) => {
     e.preventDefault();

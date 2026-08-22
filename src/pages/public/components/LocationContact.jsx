@@ -7,7 +7,7 @@ export default function LocationContact() {
   const mapsUrl = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3923.3842195608045!2d-73.25030782598692!3d10.47034676476691!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e8abbdd538d3a97%3A0x2fd0b0a41084bb!2sTECNO-LOGICOS%20GR!5e0!3m2!1ses!2sco!4v1775250103058!5m2!1ses!2sco';
   const directionsUrl = 'https://www.google.com/maps/dir/?api=1&destination=TECNO-LOGICOS%20GR';
   const handleWhatsAppClick = () => {
-    const wppLink = 'https://wa.me/573001234567?text=Hola,%20me%20gustar%C3%ADa%20cotizar%20un%20servicio%20o%20producto.';
+    const wppLink = 'https://wa.me/573003436635?text=Hola,%20me%20gustar%C3%ADa%20cotizar%20un%20servicio%20o%20producto.';
     window.open(wppLink, '_blank');
   };
 

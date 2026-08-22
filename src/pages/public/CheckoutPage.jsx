@@ -143,7 +143,7 @@ export default function CheckoutPage() {
         itemsSummary || '- Sin items'
       ].filter(Boolean).join('%0A');
 
-      window.open(`https://wa.me/573001234567?text=${whatsappText}`, '_blank');
+      window.open(`https://wa.me/573003436635?text=${whatsappText}`, '_blank');
       
       toast({
         title: "¡Pedido Confirmado!",

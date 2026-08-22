@@ -59,11 +59,13 @@ export default function PublicFooter() {
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                  <MapPin size={18} className="text-primary shrink-0 mt-0.5" />
-                 <span className="text-slate-500 text-sm font-medium">Unilago, Local 1234, Carrera 15 #78-33, Bogotá, Colombia</span>
+                 <span className="text-slate-500 text-sm font-medium">Calle 18 #12 - 05, Barrio Gaitán, Valledupar, Cesar</span>
               </li>
               <li className="flex items-center gap-3">
                  <Phone size={18} className="text-primary shrink-0" />
-                 <span className="text-slate-500 text-sm font-medium">+57 300 123 4567</span>
+                 <a href="https://wa.me/573003436635" target="_blank" rel="noreferrer" className="text-slate-500 hover:text-primary transition-colors text-sm font-medium">
+                   +57 300 343 6635
+                 </a>
               </li>
               <li className="flex items-center gap-3">
                  <Mail size={18} className="text-primary shrink-0" />
