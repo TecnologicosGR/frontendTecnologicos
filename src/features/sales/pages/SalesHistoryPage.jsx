@@ -9,7 +9,7 @@ import {
   Receipt, Search, RefreshCw, Eye, Trash2, X, Loader2,
   TrendingUp, DollarSign, CreditCard, Banknote, FileText,
   ChevronLeft, ChevronRight, Calendar, BarChart2, Filter,
-  CheckCircle2, Clock, AlertCircle
+  CheckCircle2, Clock, AlertCircle, Tag
 } from 'lucide-react';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -226,6 +226,11 @@ function SaleDetailModal({ saleId, onClose }) {
                     <tr key={i}>
                       <td className="px-4 py-2.5">
                         <p className="font-medium">{item.nombre_producto}</p>
+                        {item.numero_serie && (
+                          <p className="text-xs font-mono font-semibold text-primary dark:text-primary/90 mt-0.5 flex items-center gap-1">
+                            <Tag className="h-3 w-3 shrink-0" /> S/N: {item.numero_serie}
+                          </p>
+                        )}
                         {item.fecha_limite_garantia && <p className="text-xs text-slate-400">Garantía hasta: {item.fecha_limite_garantia}</p>}
                       </td>
                       <td className="px-3 py-2.5 text-right">{item.cantidad}</td>

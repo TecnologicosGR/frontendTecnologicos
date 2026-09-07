@@ -32,6 +32,7 @@ const KanbanPage             = lazy(() => import('./features/technical-services/
 const POSPage                = lazy(() => import('./features/sales/pages/POSPage.jsx'));
 const SalesHistoryPage       = lazy(() => import('./features/sales/pages/SalesHistoryPage.jsx'));
 const PendingSalesPage       = lazy(() => import('./features/sales/pages/PendingSalesPage.jsx'));
+const QuotationsPage          = lazy(() => import('./features/quotations/pages/QuotationsPage.jsx'));
 const CompanyInfoPage        = lazy(() => import('./features/company/pages/CompanyInfoPage.jsx'));
 const PaymentMethodsPage     = lazy(() => import('./features/company/pages/PaymentMethodsPage.jsx'));
 const DeliveryConfigPage     = lazy(() => import('./features/company/pages/DeliveryConfigPage.jsx'));
@@ -114,6 +115,7 @@ function App() {
                       <Route path="admin-services"         element={<AdminServicesPage />} />
                       <Route path="sales"                  element={<SalesHistoryPage />} />
                       <Route path="sales/pending"          element={<PendingSalesPage />} />
+                      <Route path="quotations"             element={<QuotationsPage />} />
                       <Route path="pos"                    element={<POSPage />} />
                       <Route path="customers"              element={<ClientsPage />} />
                       <Route path="employees"              element={<EmployeesPage />} />

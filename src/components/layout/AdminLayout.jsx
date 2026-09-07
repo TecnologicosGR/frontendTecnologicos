@@ -23,6 +23,7 @@ import {
   History,
   Receipt,
   Landmark,
+  FileSpreadsheet,
   Building2,
   Clock,
   BarChart3,
@@ -142,6 +143,7 @@ export default function AdminLayout() {
                 <SidebarItem to="/admin/pos"               icon={CreditCard} label="Punto de Venta"     permission="carrito:usar" />
                 <SidebarItem to="/admin/sales"             icon={Receipt}    label="Historial de Ventas" permission="pedidos:leer" />
                 <SidebarItem to="/admin/sales/pending"     icon={Clock}      label="Pendientes de Pago" permission="pedidos:leer" />
+                <SidebarItem to="/admin/quotations"         icon={FileSpreadsheet} label="Cotizaciones" permission="pedidos:leer" />
                 <SidebarItem to="/admin/finance/cierres"   icon={DollarSign} label="Cierre de Caja"     permission="finanzas:cierre" />
               </SidebarGroup>
 
@@ -209,6 +211,7 @@ export default function AdminLayout() {
                           <SidebarItem to="/admin/pos"             icon={CreditCard} label="Punto de Venta"     permission="carrito:usar" />
                           <SidebarItem to="/admin/sales"           icon={Receipt}    label="Historial de Ventas" permission="pedidos:leer" />
                           <SidebarItem to="/admin/sales/pending"   icon={Clock}      label="Pendientes de Pago" permission="pedidos:leer" />
+                          <SidebarItem to="/admin/quotations"       icon={FileSpreadsheet} label="Cotizaciones" permission="pedidos:leer" />
                           <SidebarItem to="/admin/finance/cierres" icon={DollarSign} label="Cierre de Caja"     permission="finanzas:cierre" />
                         </SidebarGroup>
 
