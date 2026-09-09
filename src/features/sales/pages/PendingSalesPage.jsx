@@ -34,15 +34,185 @@ function EntregaBadge({ tipo }) {
   );
 }
 
-function SaleCard({ sale, onMarkPaid }) {
-  const [marking, setMarking] = useState(false);
+function RegisterPaymentModal({ sale, onClose, onSuccess }) {
+  const { toast } = useToast();
+  const [metodoPago, setMetodoPago] = useState('Efectivo');
+  const [montoEfectivo, setMontoEfectivo] = useState('');
+  const [montoTransferencia, setMontoTransferencia] = useState('');
+  const [observaciones, setObservaciones] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleMark = async () => {
-    setMarking(true);
-    await onMarkPaid(sale.id, true);
-    setMarking(false);
+  const total = parseFloat(sale?.monto_total || 0);
+
+  useEffect(() => {
+    if (metodoPago === 'Mixto') {
+      const half = Math.round(total / 2);
+      setMontoEfectivo(half);
+      setMontoTransferencia(total - half);
+    }
+  }, [metodoPago, total]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (metodoPago === 'Mixto') {
+      const ef = parseFloat(montoEfectivo || 0);
+      const tr = parseFloat(montoTransferencia || 0);
+      if (Math.abs((ef + tr) - total) > 0.01) {
+        toast({
+          title: '❌ Error en Montos',
+          description: `La suma (${formatCOP(ef + tr)}) debe coincidir exactamente con el total (${formatCOP(total)}).`,
+          variant: 'destructive'
+        });
+        return;
+      }
+    }
+
+    setSubmitting(true);
+    try {
+      let efVal = 0;
+      let trVal = 0;
+      if (metodoPago === 'Efectivo') efVal = total;
+      else if (['Transferencia', 'Nequi', 'Bancolombia'].includes(metodoPago)) trVal = total;
+      else if (metodoPago === 'Mixto') {
+        efVal = parseFloat(montoEfectivo || 0);
+        trVal = parseFloat(montoTransferencia || 0);
+      }
+
+      await axios.patch(`sales/${sale.id}/pago`, {
+        pagado: true,
+        metodo_pago: metodoPago,
+        monto_efectivo: efVal,
+        monto_transferencia: trVal,
+        observaciones: observaciones.trim() || undefined
+      });
+
+      toast({
+        title: '✅ Pago Registrado con Éxito',
+        description: `Venta #${sale.id} pagada vía ${metodoPago}. Registrada en la Caja de Hoy.`
+      });
+      onSuccess();
+      onClose();
+    } catch (err) {
+      toast({
+        title: '❌ Error registrando pago',
+        description: err.response?.data?.detail || 'Intenta de nuevo',
+        variant: 'destructive'
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
+  if (!sale) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-green-600" /> Registrar Pago - Venta #{sale.id}
+            </h3>
+            <p className="text-xs text-slate-500">Cliente: {sale.nombre_cliente || 'Mostrador'}</p>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-lg font-bold px-2">✕</button>
+        </div>
+
+        {/* Total Badge */}
+        <div className="bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/60 rounded-xl p-3.5 flex items-center justify-between">
+          <div>
+            <span className="text-xs font-semibold text-green-700 dark:text-green-400 block">Total a Recaudar</span>
+            <span className="text-2xl font-black text-green-800 dark:text-green-300">{formatCOP(sale.monto_total)}</span>
+          </div>
+          <span className="text-xs font-bold text-green-600 bg-green-100 dark:bg-green-900/60 px-2.5 py-1 rounded-full">
+            Pendiente
+          </span>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          
+          {/* Método de pago */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Método de Pago Empleado</label>
+            <select
+              value={metodoPago}
+              onChange={(e) => setMetodoPago(e.target.value)}
+              className="w-full h-10 px-3 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="Efectivo">Efectivo 💵</option>
+              <option value="Transferencia">Transferencia Bancaria 🏦</option>
+              <option value="Nequi">Nequi 📱</option>
+              <option value="Bancolombia">Bancolombia 📱</option>
+              <option value="Tarjeta">Tarjeta Débito/Crédito 💳</option>
+              <option value="Mixto">Pago Mixto (Efectivo + Transferencia) 🔀</option>
+            </select>
+          </div>
+
+          {/* Mixto Breakdown */}
+          {metodoPago === 'Mixto' && (
+            <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Monto Efectivo</label>
+                <Input
+                  type="number"
+                  value={montoEfectivo}
+                  onChange={(e) => setMontoEfectivo(e.target.value)}
+                  placeholder="0"
+                  className="h-9 text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">Monto Transferencia</label>
+                <Input
+                  type="number"
+                  value={montoTransferencia}
+                  onChange={(e) => setMontoTransferencia(e.target.value)}
+                  placeholder="0"
+                  className="h-9 text-xs"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Observaciones */}
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Nota / Comprobante (opcional)</label>
+            <Input
+              value={observaciones}
+              onChange={(e) => setObservaciones(e.target.value)}
+              placeholder="Ej: Nro de comprobante o referencia..."
+              className="h-9 text-xs"
+            />
+          </div>
+
+          {/* Alert Notice */}
+          <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50 rounded-xl text-[11px] text-blue-700 dark:text-blue-300 flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-blue-500 mt-0.5" />
+            <span>Este cobro se sumará automáticamente a la <strong>Caja de HOY ({new Date().toLocaleDateString('es-CO')})</strong> bajo el método de pago elegido.</span>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting} className="bg-green-600 hover:bg-green-700 text-white font-bold gap-2">
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+              Confirmar Pago
+            </Button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  );
+}
+
+function SaleCard({ sale, onOpenPaymentModal }) {
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-800/50 p-4 hover:border-primary/40 transition-colors">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -75,17 +245,15 @@ function SaleCard({ sale, onMarkPaid }) {
           <div className="flex items-center gap-3 text-xs text-slate-400">
             <span>{sale.total_items} producto(s)</span>
             <span>·</span>
-            <span>{sale.metodo_pago}</span>
+            <span className="font-medium text-slate-500">Forma inicial: {sale.metodo_pago}</span>
           </div>
         </div>
 
         {/* Right: amount + action */}
         <div className="flex flex-col items-end gap-3 shrink-0">
           <span className="font-black text-xl text-primary">{formatCOP(sale.monto_total)}</span>
-          <Button size="sm" onClick={handleMark} disabled={marking} className="gap-2 bg-green-600 hover:bg-green-700 text-white">
-            {marking
-              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              : <CheckCircle2 className="h-3.5 w-3.5" />}
+          <Button size="sm" onClick={() => onOpenPaymentModal(sale)} className="gap-2 bg-green-600 hover:bg-green-700 text-white font-bold shadow-md shadow-green-600/20">
+            <CheckCircle2 className="h-3.5 w-3.5" />
             Marcar pagado
           </Button>
         </div>
@@ -100,6 +268,7 @@ export default function PendingSalesPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [selectedSaleForPayment, setSelectedSaleForPayment] = useState(null);
 
   const load = useCallback(async (q = '') => {
     setLoading(true);
@@ -119,16 +288,6 @@ export default function PendingSalesPage() {
     const t = setTimeout(() => load(search), 400);
     return () => clearTimeout(t);
   }, [search, load]);
-
-  const handleMarkPaid = async (id, pagado) => {
-    try {
-      await axios.patch(`sales/${id}/pago`, null, { params: { pagado } });
-      toast({ title: `✅ Venta #${id} marcada como pagada` });
-      load(search);
-    } catch {
-      toast({ title: '❌ Error actualizando', variant: 'destructive' });
-    }
-  };
 
   // Group by tipo_entrega for visual organization
   const domicilio = sales.filter(s => s.tipo_entrega === 'domicilio');
@@ -196,7 +355,7 @@ export default function PendingSalesPage() {
                 <Truck className="h-4 w-4 text-amber-500" />
                 <p className="font-semibold text-sm">Domicilios ({domicilio.length})</p>
               </div>
-              {domicilio.map(s => <SaleCard key={s.id} sale={s} onMarkPaid={handleMarkPaid} />)}
+              {domicilio.map(s => <SaleCard key={s.id} sale={s} onOpenPaymentModal={setSelectedSaleForPayment} />)}
             </div>
           )}
           {/* A recoger */}
@@ -206,7 +365,7 @@ export default function PendingSalesPage() {
                 <PackageCheck className="h-4 w-4 text-blue-500" />
                 <p className="font-semibold text-sm">A recoger en punto ({recoger.length})</p>
               </div>
-              {recoger.map(s => <SaleCard key={s.id} sale={s} onMarkPaid={handleMarkPaid} />)}
+              {recoger.map(s => <SaleCard key={s.id} sale={s} onOpenPaymentModal={setSelectedSaleForPayment} />)}
             </div>
           )}
           {/* Otros */}
@@ -216,10 +375,19 @@ export default function PendingSalesPage() {
                 <AlertCircle className="h-4 w-4 text-slate-400" />
                 <p className="font-semibold text-sm">Otros ({otros.length})</p>
               </div>
-              {otros.map(s => <SaleCard key={s.id} sale={s} onMarkPaid={handleMarkPaid} />)}
+              {otros.map(s => <SaleCard key={s.id} sale={s} onOpenPaymentModal={setSelectedSaleForPayment} />)}
             </div>
           )}
         </div>
+      )}
+
+      {/* Payment Modal */}
+      {selectedSaleForPayment && (
+        <RegisterPaymentModal
+          sale={selectedSaleForPayment}
+          onClose={() => setSelectedSaleForPayment(null)}
+          onSuccess={() => load(search)}
+        />
       )}
     </div>
   );
