@@ -488,7 +488,14 @@ export default function SalesHistoryPage() {
                     }`}
                     onClick={() => setSelectedId(sale.id)}>
                     <td className="px-4 py-3 font-mono text-slate-400 text-xs">#{sale.id}</td>
-                    <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(sale.fecha_venta)}</td>
+                    <td className="px-4 py-3 text-slate-500 text-xs">
+                      <div>{formatDate(sale.fecha_venta)}</div>
+                      {sale.fecha_pago && new Date(sale.fecha_pago).toDateString() !== new Date(sale.fecha_venta).toDateString() && (
+                        <span className="inline-block text-[10px] text-green-600 font-semibold bg-green-50 dark:bg-green-950/40 px-1.5 py-0.5 rounded mt-0.5">
+                          Cobrado: {formatDate(sale.fecha_pago)}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 font-medium">{sale.nombre_cliente || <span className="text-slate-400 italic">Anónimo</span>}</td>
                     <td className="px-4 py-3 text-slate-500 text-xs">{sale.nombre_empleado || '—'}</td>
                     <td className="px-3 py-3 text-center"><Badge variant="secondary">{sale.total_items ?? '—'}</Badge></td>
