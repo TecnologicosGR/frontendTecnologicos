@@ -28,7 +28,8 @@ import {
   Clock,
   BarChart3,
   DollarSign,
-  ShieldAlert
+  ShieldAlert,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -144,6 +145,7 @@ export default function AdminLayout() {
                 <SidebarItem to="/admin/sales"             icon={Receipt}    label="Historial de Ventas" permission="pedidos:leer" />
                 <SidebarItem to="/admin/sales/pending"     icon={Clock}      label="Pendientes de Pago" permission="pedidos:leer" />
                 <SidebarItem to="/admin/quotations"         icon={FileSpreadsheet} label="Cotizaciones" permission="pedidos:leer" />
+                <SidebarItem to="/admin/promotions"         icon={Sparkles}   label="Promociones"       permission="promociones:ver" />
                 <SidebarItem to="/admin/finance/cierres"   icon={DollarSign} label="Cierre de Caja"     permission="finanzas:cierre" />
               </SidebarGroup>
 
@@ -212,6 +214,7 @@ export default function AdminLayout() {
                           <SidebarItem to="/admin/sales"           icon={Receipt}    label="Historial de Ventas" permission="pedidos:leer" />
                           <SidebarItem to="/admin/sales/pending"   icon={Clock}      label="Pendientes de Pago" permission="pedidos:leer" />
                           <SidebarItem to="/admin/quotations"       icon={FileSpreadsheet} label="Cotizaciones" permission="pedidos:leer" />
+                          <SidebarItem to="/admin/promotions"       icon={Sparkles}   label="Promociones"       permission="promociones:ver" />
                           <SidebarItem to="/admin/finance/cierres" icon={DollarSign} label="Cierre de Caja"     permission="finanzas:cierre" />
                         </SidebarGroup>
 
