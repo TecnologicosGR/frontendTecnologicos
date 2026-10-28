@@ -31,10 +31,10 @@ const slides = [
   },
   {
     id: 4,
-    title: 'Smartphones',
-    subtitle: 'Telefonía Libre',
-    desc: 'Las mejores marcas del mercado con garantía directa y accesorios incluidos.',
-    image: 'https://images.unsplash.com/photo-1601784551446-20c9e07cd561?q=80&w=1412&auto=format&fit=crop',
+    title: 'Periféricos y Redes',
+    subtitle: 'Conectividad y Setup',
+    desc: 'Teclados mecánicos, mouse, conectividad, audio y accesorios para potenciar tu estación de trabajo.',
+    image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1470&auto=format&fit=crop',
     link: '/catalogo'
   }
 ];

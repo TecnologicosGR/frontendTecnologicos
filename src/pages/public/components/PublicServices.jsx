@@ -1,13 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Smartphone, Monitor, Gamepad2, Tablet, SearchCheck, CheckCircle, ShieldCheck, MessageSquare, Wrench, PackageCheck, ChevronRight } from 'lucide-react';
+import { Laptop, Monitor, Cpu, Wrench, SearchCheck, CheckCircle, ShieldCheck, MessageSquare, PackageCheck, ChevronRight } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 
 const repairCategories = [
-  { icon: Smartphone, name: 'Móviles', desc: 'Pantallas, baterías, puertos y microelectrónica.' },
-  { icon: Monitor, name: 'Computadoras', desc: 'Mantenimiento, upgrades, reballing y software.' },
-  { icon: Gamepad2, name: 'Consolas', desc: 'Limpieza térmica, HDMI, lectura de discos.' },
-  { icon: Tablet, name: 'Tablets', desc: 'Táctiles, displays, botones y conectividad.' },
+  { icon: Laptop, name: 'Laptops y Portátiles', desc: 'Mantenimiento, teclados, pantallas, bisagras y baterías.' },
+  { icon: Monitor, name: 'Computadoras de Escritorio', desc: 'Mantenimiento, ensamble, fuentes de poder y tarjetas de video.' },
+  { icon: Cpu, name: 'Mantenimiento Térmico', desc: 'Limpieza profunda, cambio de pasta térmica y refrigeración.' },
+  { icon: Wrench, name: 'Diagnóstico & Software', desc: 'Formateo, instalación de sistemas operativos, optimización y solución de fallas.' },
 ];
 
 const valueProps = [

@@ -79,7 +79,7 @@ export default function FeaturedProducts() {
             viewport={{ once: true }}
             className="flex flex-wrap items-center gap-3"
           >
-            {['Laptops & PCs', 'Smartphones', 'Componentes', 'Accesorios', 'Gaming'].map((cat, i) => (
+            {['Laptops & PCs', 'Componentes', 'Periféricos', 'Accesorios', 'Gaming'].map((cat, i) => (
                <a href="/catalogo" key={i}>
                  <div className="px-5 py-2.5 rounded-full bg-slate-100 dark:bg-[#1A1A1A] text-slate-600 dark:text-slate-300 text-sm font-bold hover:bg-primary hover:text-white dark:hover:bg-primary transition-colors cursor-pointer border border-transparent dark:border-white/5">
                    {cat}

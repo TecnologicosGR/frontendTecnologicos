@@ -15,8 +15,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-100 font-sans selection:bg-primary/30 scroll-smooth">
       <SEO 
         title="Inicio" 
-        description="Servicio técnico especializado y tienda de tecnología en Valledupar. Reparación de pantallas, soporte para celulares y computadores, y venta de accesorios con garantía."
-        keywords="tecnologicos valledupar, servicio tecnico valledupar, reparacion de celulares valledupar, tienda de tecnologia valledupar, accesorios para celular valledupar"
+        description="Servicio técnico especializado y tienda de tecnología en Valledupar. Mantenimiento y reparación de computadores y laptops, ensamble y venta de componentes y accesorios con garantía."
+        keywords="tecnologicos valledupar, servicio tecnico valledupar, reparacion de computadores valledupar, servicio tecnico laptops valledupar, tienda de tecnologia valledupar, componentes pc valledupar, accesorios tecnologicos"
       />
       <PublicNavbar />
       <main>

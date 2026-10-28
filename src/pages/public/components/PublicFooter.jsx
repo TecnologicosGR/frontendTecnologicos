@@ -19,7 +19,7 @@ export default function PublicFooter() {
               </span>
             </Link>
             <p className="text-slate-500 text-sm leading-relaxed">
-              Tu aliado estratégico en tecnología. Venta de equipos de última generación y laboratorio técnico especializado en microelectrónica.
+              Tu aliado estratégico en tecnología. Venta de computadores, componentes, accesorios y laboratorio técnico especializado en laptops y PCs.
             </p>
             <div className="flex gap-4 pt-2">
                <a href="#" className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#111111] flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-primary hover:text-white dark:hover:bg-primary transition-colors">
@@ -37,7 +37,7 @@ export default function PublicFooter() {
             <ul className="space-y-3">
               <li><Link to="/catalogo" className="text-slate-500 hover:text-primary transition-colors text-sm font-medium">Equipos y Laptops</Link></li>
               <li><Link to="/catalogo" className="text-slate-500 hover:text-primary transition-colors text-sm font-medium">Componentes PC</Link></li>
-              <li><Link to="/catalogo" className="text-slate-500 hover:text-primary transition-colors text-sm font-medium">Smartphones</Link></li>
+              <li><Link to="/catalogo" className="text-slate-500 hover:text-primary transition-colors text-sm font-medium">Periféricos y Redes</Link></li>
               <li><Link to="/catalogo" className="text-slate-500 hover:text-primary transition-colors text-sm font-medium">Accesorios</Link></li>
             </ul>
           </div>
@@ -46,7 +46,7 @@ export default function PublicFooter() {
           <div>
             <h4 className="font-bold text-slate-900 dark:text-white text-lg mb-6">Soporte y Políticas</h4>
             <ul className="space-y-3">
-              <li><a href="#" className="text-slate-500 hover:text-primary transition-colors text-sm font-medium">Políticas de Garantía Técinica</a></li>
+              <li><a href="#" className="text-slate-500 hover:text-primary transition-colors text-sm font-medium">Políticas de Garantía Técnica</a></li>
               <li><a href="#" className="text-slate-500 hover:text-primary transition-colors text-sm font-medium">Políticas de Devolución</a></li>
               <li><a href="#" className="text-slate-500 hover:text-primary transition-colors text-sm font-medium">Tiempos y Costos de Envío</a></li>
               <li><a href="#" className="text-slate-500 hover:text-primary transition-colors text-sm font-medium">Términos y Condiciones</a></li>
